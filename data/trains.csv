@@ -1,8 +1,7 @@
-train_id,train_number,train_type,priority_class
-1,12123,EXPRESS,1
-2,12124,EXPRESS,1
-3,11007,PASSENGER,2
-4,11008,PASSENGER,2
-5,BG4501,GOODS,4
-6,BG4502,GOODS,4
-7,BG4503,GOODS,4
+train_id,train_number,train_name,train_type,priority_class,origin_station_id,destination_station_id,scheduled_departure,scheduled_arrival,max_allowed_delay_minutes,can_be_rerouted,max_speed_kmph
+1,12124,Pragati Express,EXPRESS,2,1,6,2026-09-21 22:40:00+05:30,2026-09-22 02:30:00+05:30,15,TRUE,110
+2,11007,Deccan Express,EXPRESS,2,6,1,2026-09-21 23:50:00+05:30,2026-09-22 03:40:00+05:30,15,TRUE,110
+3,16339,Solapur Passenger,PASSENGER,4,6,8,2026-09-21 22:00:00+05:30,2026-09-22 01:30:00+05:30,20,TRUE,90
+4,GDS4471,Goods Freight,GOODS,5,2,8,2026-09-21 21:30:00+05:30,2026-09-22 04:35:00+05:30,60,TRUE,60
+5,12627,Konark Express,EXPRESS,1,1,8,2026-09-21 23:20:00+05:30,2026-09-22 05:25:00+05:30,10,TRUE,130
+6,51567,Panvel Local,PASSENGER,4,2,3,2026-09-21 23:05:00+05:30,2026-09-21 23:50:00+05:30,15,FALSE,80

@@ -1,0 +1,3 @@
+route_id,train_id,route_version,sequence_no,section_id,track_id,planned_entry,planned_exit,is_active
+1,5,1,3,4,6,2026-09-22 01:05:00+05:30,2026-09-22 01:25:00+05:30,FALSE
+2,5,2,3,4,7,2026-09-22 01:05:00+05:30,2026-09-22 01:25:00+05:30,TRUE

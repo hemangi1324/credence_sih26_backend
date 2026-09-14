@@ -1,0 +1,6 @@
+id,job_a_id,job_b_id,spatial_ok,temporal_ok,safety_ok,resource_ok,compatible,reason,computed_at
+1,1,2,TRUE,TRUE,TRUE,TRUE,TRUE,"Same section/track, overlapping window; ENG+TRD isolation-compatible.",
+2,1,3,TRUE,TRUE,TRUE,TRUE,TRUE,Signal inspection compatible with adjacent engineering work once isolation is sequenced.,
+3,2,3,TRUE,TRUE,TRUE,TRUE,TRUE,S&T work sequenced after TRD isolation (see job_dependencies).,
+4,4,5,TRUE,FALSE,TRUE,TRUE,FALSE,"Same corridor, but requested windows do not overlap enough to bundle.",
+5,9,10,TRUE,TRUE,FALSE,TRUE,FALSE,OHE energisation conflicts with the engineering isolation sequence unless the job_dependencies gap is honoured.,

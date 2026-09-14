@@ -1,6 +1,8 @@
-section_id,code,from_station_id,to_station_id,distance_km,travel_minutes
-1,PUNE-LNL,1,2,64.0,55
-2,LNL-KJT,2,3,30.0,28
-3,KJT-KYN,3,4,54.0,45
-4,KYN-TNA,4,5,14.0,14
-5,TNA-CSMT,5,6,34.0,40
+section_id,code,from_station_id,to_station_id,division,distance_km,travel_minutes,geom
+1,CSTM-KYN,1,2,Mumbai,54.00,70,
+2,KYN-PNVL,2,3,Mumbai,30.00,45,
+3,KYN-KJT,2,4,Pune,39.00,55,
+4,KJT-LNL,4,5,Pune,15.00,25,
+5,LNL-PUNE,5,6,Pune,64.00,80,
+6,PUNE-DD,6,7,Pune,75.00,90,
+7,DD-SUR,7,8,Solapur,105.00,120,

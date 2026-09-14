@@ -1,7 +1,9 @@
-station_id,code,name,latitude,longitude
-1,PUNE,Pune Jn,18.5286,73.8744
-2,LNL,Lonavala,18.748,73.4067
-3,KJT,Karjat,18.9107,73.3235
-4,KYN,Kalyan Jn,19.2437,73.1355
-5,TNA,Thane,19.1868,72.975
-6,CSMT,Mumbai CSMT,18.9401,72.8352
+station_id,code,name,station_type,num_platforms,num_sidings,platform_capacity,latitude,longitude,geom
+1,CSTM,Mumbai CSMT,TERMINAL,18,4,6,18.9398,72.8355,
+2,KYN,Kalyan,JUNCTION,8,6,3,19.2437,73.1355,
+3,PNVL,Panvel,JUNCTION,6,3,2,18.9894,73.1175,
+4,KJT,Karjat,JUNCTION,4,2,2,18.9107,73.3237,
+5,LNL,Lonavala,JUNCTION,4,2,2,18.7546,73.4062,
+6,PUNE,Pune,TERMINAL,6,4,3,18.5286,73.8744,
+7,DD,Daund,JUNCTION,4,2,2,18.4645,74.5814,
+8,SUR,Solapur,TERMINAL,5,3,2,17.6599,75.9064,

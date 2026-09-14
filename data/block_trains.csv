@@ -1,0 +1,4 @@
+id,block_id,train_id,impact_type,delay_minutes,original_route,new_route
+1,1,1,WAIT,10,,
+2,1,5,REROUTE,18,"{""section_id"": 4, ""track_id"": 6}","{""section_id"": 4, ""track_id"": 7}"
+3,2,3,WAIT,5,,

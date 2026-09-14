@@ -1,0 +1,2 @@
+decision_id,train_id,event_id,blocked_track_id,original_route_id,alternate_route_id,reroute_time,additional_distance_km,additional_travel_time_minutes,additional_delay_minutes,reason,accepted,decided_by,decided_at
+1,5,4,6,1,2,2026-09-22 00:50:00+05:30,0.00,0,18,Track 6 (KJT-LNL UP) occupied by integrated maintenance block BUNDLE-1-2-3 until 01:30; rerouted onto the DOWN line to avoid a 60+ minute wait.,TRUE,Control Office - Karjat Section Controller,2026-09-22 00:52:00+05:30

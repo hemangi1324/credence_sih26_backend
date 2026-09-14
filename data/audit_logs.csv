@@ -1,0 +1,5 @@
+id,entity_type,entity_id,action,actor,role,reason,created_at
+1,BLOCK,1,APPROVE,S. Deshmukh,CONTROL_OFFICE,Bundled ENG+TRD+SNT possession approved; train impact acceptable (max 18 min).,
+2,BLOCK,2,APPROVE,R. Kulkarni,CONTROL_OFFICE,Emergency possession auto-escalated and approved.,
+3,REQUEST,11,REJECT,A. Bhosale,PLANNER,Branch-line single track window conflicts with scheduled Panvel local/goods traffic; resubmit for a later window.,
+4,REROUTE,1,OVERRIDE,S. Deshmukh,CONTROL_OFFICE,Accepted AI-proposed reroute for Konark Express onto the DOWN line rather than a 60+ minute wait.,

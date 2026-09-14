@@ -1,0 +1,7 @@
+event_id,event_type,section_id,track_id,asset_id,train_id,job_id,location_station_id,severity,estimated_duration_minutes,actual_duration_minutes,status,source,payload,occurred_at
+1,EQUIPMENT_FAILURE,7,12,14,,,,5,150,140,RESOLVED,TDMS_SENSOR,"{""defect"": ""rail_fracture"", ""detected_by"": ""ultrasonic_flaw_detector""}",2026-09-21 19:45:00+05:30
+2,EMERGENCY_MAINTENANCE,7,12,14,,6,,5,120,140,RESOLVED,CONTROL_OFFICE,,2026-09-21 20:00:00+05:30
+3,TRACK_RESTORED,7,12,14,,,,1,,,RESOLVED,FIELD_CREW,,2026-09-21 22:20:00+05:30
+4,TRAIN_DELAY,4,6,,5,,,2,18,18,RESOLVED,CONTROL_OFFICE,,2026-09-22 01:05:00+05:30
+5,SIGNAL_FAILURE,4,7,5,,,,3,40,,OPEN,SMMS_SENSOR,,2026-09-21 21:10:00+05:30
+6,BLOCK_OVERRUN,6,10,,,10,,2,55,70,RESOLVED,FIELD_CREW,,2026-08-25 23:55:00+05:30

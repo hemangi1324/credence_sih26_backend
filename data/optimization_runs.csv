@@ -1,2 +1,2 @@
-run_id,horizon,started_at,finished_at,objective_cost,solver_status
-1,WEEKLY,2026-09-14T05:43:12.726652,2026-09-14T05:43:12.726662,0.0,OPTIMAL
+run_id,horizon,triggered_by,started_at,finished_at,objective_cost,solver_status,notes
+1,WEEKLY,seed_demo,2026-09-21 18:00:00+05:30,2026-09-21 18:04:00+05:30,842.500,OPTIMAL,"Illustrative demo plan for the Karjat-Lonavala corridor bundle. Hand-built for seed purposes, not an actual CP-SAT solve."
