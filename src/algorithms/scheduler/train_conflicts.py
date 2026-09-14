@@ -18,10 +18,20 @@ def estimate_train_impact(block_track_id: str, block_start: datetime.time, block
         if not train:
             continue
             
-        # Simplified time overlap check (assuming same day)
-        # In a real TDSP, we'd calculate exact space-time propagation of delay
         entry = sched.entry_time
         exit = sched.exit_time
+        
+        def parse_t(t_val):
+            if isinstance(t_val, str):
+                try:
+                    parts = t_val.split(':')
+                    return datetime.time(int(parts[0]), int(parts[1]))
+                except:
+                    return datetime.time(0, 0)
+            return t_val
+            
+        entry = parse_t(entry)
+        exit = parse_t(exit)
         
         # Check if [block_start, block_end] overlaps with [entry, exit]
         if entry and exit:

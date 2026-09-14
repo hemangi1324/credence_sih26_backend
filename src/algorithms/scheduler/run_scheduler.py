@@ -26,8 +26,8 @@ def main():
     
     # Train timetable might not exist yet, handle gracefully
     try:
-        trains_df = pd.read_csv(os.path.join(data_dir, '03_trains.csv')).where(pd.notnull, None)
-        timetable_df = pd.read_csv(os.path.join(data_dir, '04_train_timetable.csv')).where(pd.notnull, None)
+        trains_df = pd.read_csv(os.path.join(data_dir, '04_trains.csv')).where(pd.notnull, None)
+        timetable_df = pd.read_csv(os.path.join(data_dir, '05_train_timetable.csv')).where(pd.notnull, None)
         trains = [MockObj(t) for t in trains_df.to_dict('records')]
         timetable = [MockObj(t) for t in timetable_df.to_dict('records')]
     except Exception:
