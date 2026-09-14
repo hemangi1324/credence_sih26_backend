@@ -1,0 +1,8 @@
+resource_id,resource_type,department_id,name,capacity
+1,TAMPING_MACHINE,1,Tamping Machine,1
+2,RAIL_GRINDER,1,Rail Grinder,1
+3,OHE_TOWER_WAGON,3,Ohe Tower Wagon,1
+4,SIGNAL_TEST_VAN,2,Signal Test Van,1
+5,CREW_ENG,1,Crew Eng,3
+6,CREW_SNT,2,Crew Snt,3
+7,CREW_TRD,3,Crew Trd,2

@@ -1,0 +1,26 @@
+job_id,source_system,department_id,asset_id,section_id,defect_type,severity,criticality,urgency,overdue_days,condition_score,estimated_duration_minutes,safety_buffer_minutes,power_block_required,signalling_disconnection_reqd,status,priority_score,priority_tier
+1,TMS,1,1,1,Rail crack,4,0.86,0.36,0,0.92,120,15,False,False,SCHEDULED,40.0,MEDIUM
+2,TMS,1,2,1,Rail crack,2,0.39,0.35,0,0.9,45,15,False,False,SCHEDULED,26.2,LOW
+3,SMMS,2,3,1,Point machine wear,5,1.0,0.68,0,0.39,45,15,False,False,SCHEDULED,63.85,HIGH
+4,SMMS,2,4,1,Point machine wear,2,0.36,0.39,0,0.38,45,15,False,False,SCHEDULED,39.1,MEDIUM
+5,TDMS,3,5,1,Dropper defect,5,0.92,0.76,5,0.41,120,15,True,False,SCHEDULED,66.55,HIGH
+6,TMS,1,6,2,Weld defect,4,0.82,0.59,14,0.76,75,15,False,False,SCHEDULED,54.4,MEDIUM
+7,TMS,1,7,2,Track geometry defect,2,0.41,0.87,0,0.83,90,15,False,False,SCHEDULED,38.95,MEDIUM
+8,SMMS,2,8,2,Cable insulation defect,4,0.73,0.62,2,0.42,45,15,False,False,SCHEDULED,54.8,MEDIUM
+9,TDMS,3,9,2,Feeder cable fault,3,0.51,0.36,30,0.55,75,15,True,False,SCHEDULED,55.25,HIGH
+10,TDMS,3,10,2,Dropper defect,3,0.64,0.88,30,0.39,75,15,True,False,SCHEDULED,73.55,HIGH
+11,TMS,1,11,3,Rail crack,1,0.14,0.49,30,0.45,60,15,False,False,SCHEDULED,47.75,MEDIUM
+12,TMS,1,12,3,Ballast deficiency,4,0.79,0.66,0,0.58,60,15,False,False,SCHEDULED,52.4,MEDIUM
+13,SMMS,2,13,3,Point machine wear,3,0.53,0.41,21,0.77,60,15,False,False,SCHEDULED,45.35,MEDIUM
+14,SMMS,2,14,3,Cable insulation defect,5,0.96,0.39,2,0.64,120,15,False,True,SCHEDULED,53.1,MEDIUM
+15,TDMS,3,15,3,Feeder cable fault,5,1.0,0.81,0,0.92,120,15,True,False,SCHEDULED,54.7,MEDIUM
+16,TDMS,3,16,3,OHE wire wear,4,0.74,0.94,21,0.59,90,15,True,False,SCHEDULED,68.25,HIGH
+17,TMS,1,17,4,Rail crack,5,1.0,0.7,2,0.41,45,15,False,False,SCHEDULED,64.75,HIGH
+18,SMMS,2,18,4,Cable insulation defect,3,0.59,0.37,14,0.44,90,15,False,False,SCHEDULED,51.1,MEDIUM
+19,SMMS,2,19,4,Point machine wear,3,0.52,0.52,0,0.64,75,15,False,True,SCHEDULED,41.5,MEDIUM
+20,TDMS,3,20,4,Insulator flashover risk,2,0.44,0.89,14,0.66,120,15,True,False,SCHEDULED,53.0,MEDIUM
+21,TMS,1,21,5,Ballast deficiency,3,0.57,0.44,14,0.77,120,15,False,False,SCHEDULED,43.65,MEDIUM
+22,SMMS,2,22,5,Point machine wear,5,1.0,0.78,5,0.73,60,15,False,True,SCHEDULED,61.35,HIGH
+23,SMMS,2,23,5,Cable insulation defect,1,0.19,0.43,0,0.56,120,15,False,False,SCHEDULED,30.3,LOW
+24,TDMS,3,24,5,Insulator flashover risk,3,0.52,0.61,0,0.92,75,15,True,False,SCHEDULED,36.3,MEDIUM
+25,TDMS,3,25,5,Feeder cable fault,5,1.0,0.52,0,0.94,45,15,False,False,SCHEDULED,46.9,MEDIUM
