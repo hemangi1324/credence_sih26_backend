@@ -28,7 +28,14 @@
 --     for CP-SAT, not just decoration.
 --   * A live reroute: Time-Dependent-A*-style train_routes (baseline +
 --     alternate), a rerouting_decision, and the WAIT vs REROUTE split
---     across two affected trains for the same block.
+--     across affected trains for the same block (Pragati waits 45 min
+--     for BUNDLE-1-2-3 to clear; Konark Express and GDS4471 reroute
+--     onto the DOWN line). train_movements.track_id matches that
+--     decision, so it never collides with an active block.
+--   * Job status is driven by the block that holds it: APPROVED ->
+--     SCHEDULED, PROPOSED -> SCHEDULED, DONE -> COMPLETED. Unassigned
+--     jobs stay OPEN/DEFERRED so the planner's `WHERE status = 'OPEN'`
+--     will not re-plan committed or finished work.
 --   * A historical "block requested but not granted" record that
 --     causally precedes the FAILED asset -- good ALNS/ML training
 --     narrative (Sec. 6 of your solution_overview.md).
@@ -143,12 +150,18 @@ INSERT INTO trains (train_id, train_number, train_name, train_type, priority_cla
     (5, '12627', 'Konark Express',   'EXPRESS',   1, 1, 8, '2026-09-21 23:20:00+05:30', '2026-09-22 05:25:00+05:30', 10, TRUE,  130),
     (6, '51567', 'Panvel Local',     'PASSENGER', 4, 2, 3, '2026-09-21 23:05:00+05:30', '2026-09-21 23:50:00+05:30', 15, FALSE,  80);
 
--- Section-by-section timetable (the baseline "as published" route)
+-- Section-by-section timetable (the baseline "as published" route,
+-- except where a possession forced a hold or a DOWN-line reroute —
+-- those legs already reflect the resolved plan, so they never occupy
+-- a track an active block is holding).
 INSERT INTO train_movements (train_id, section_id, track_id, scheduled_entry, scheduled_exit, sequence_no, night_index) VALUES
     -- Train 1 (12124) CSTM -> KYN -> KJT -> LNL -> PUNE
+    -- KJT-LNL (seq 3) waits for BUNDLE-1-2-3 to release track 6 at 01:30 IST
+    -- (19:15Z due onto the track, 20:00Z release = 45 min hold, then the
+    -- original 25-minute run 01:30-01:55 IST).
     (1, 1, 1, '2026-09-21 22:40:00+05:30', '2026-09-21 23:50:00+05:30', 1, 0),
     (1, 3, 4, '2026-09-21 23:50:00+05:30', '2026-09-22 00:45:00+05:30', 2, 0),
-    (1, 4, 6, '2026-09-22 00:45:00+05:30', '2026-09-22 01:10:00+05:30', 3, 0),
+    (1, 4, 6, '2026-09-22 01:30:00+05:30', '2026-09-22 01:55:00+05:30', 3, 0),
     (1, 5, 8, '2026-09-22 01:10:00+05:30', '2026-09-22 02:30:00+05:30', 4, 0),
     -- Train 2 (11007) PUNE -> LNL -> KJT -> KYN -> CSTM
     (2, 5, 9,  '2026-09-21 23:50:00+05:30', '2026-09-22 01:10:00+05:30', 1, 0),
@@ -159,15 +172,18 @@ INSERT INTO train_movements (train_id, section_id, track_id, scheduled_entry, sc
     (3, 6, 10, '2026-09-21 22:00:00+05:30', '2026-09-21 23:30:00+05:30', 1, 0),
     (3, 7, 12, '2026-09-21 23:30:00+05:30', '2026-09-22 01:30:00+05:30', 2, 0),
     -- Train 4 (GDS4471) KYN -> KJT -> LNL -> PUNE -> DD -> SUR
+    -- KJT-LNL (seq 2) rerouted onto DOWN (track 7); section 4 has a free
+    -- DOWN main in that window, same treatment as train 5.
     (4, 3, 4,  '2026-09-21 21:30:00+05:30', '2026-09-21 22:40:00+05:30', 1, 0),
-    (4, 4, 6,  '2026-09-21 22:40:00+05:30', '2026-09-21 23:10:00+05:30', 2, 0),
+    (4, 4, 7,  '2026-09-21 22:40:00+05:30', '2026-09-21 23:10:00+05:30', 2, 0),
     (4, 5, 8,  '2026-09-21 23:10:00+05:30', '2026-09-22 00:45:00+05:30', 3, 0),
     (4, 6, 10, '2026-09-22 00:45:00+05:30', '2026-09-22 02:25:00+05:30', 4, 0),
     (4, 7, 12, '2026-09-22 02:25:00+05:30', '2026-09-22 04:35:00+05:30', 5, 0),
     -- Train 5 (12627) CSTM -> KYN -> KJT -> LNL -> PUNE -> DD -> SUR
+    -- KJT-LNL (seq 3) already on DOWN (track 7) to clear BUNDLE-1-2-3.
     (5, 1, 1,  '2026-09-21 23:20:00+05:30', '2026-09-22 00:20:00+05:30', 1, 0),
     (5, 3, 4,  '2026-09-22 00:20:00+05:30', '2026-09-22 01:05:00+05:30', 2, 0),
-    (5, 4, 6,  '2026-09-22 01:05:00+05:30', '2026-09-22 01:25:00+05:30', 3, 0),
+    (5, 4, 7,  '2026-09-22 01:05:00+05:30', '2026-09-22 01:25:00+05:30', 3, 0),
     (5, 5, 8,  '2026-09-22 01:25:00+05:30', '2026-09-22 02:30:00+05:30', 4, 0),
     (5, 6, 10, '2026-09-22 02:30:00+05:30', '2026-09-22 03:45:00+05:30', 5, 0),
     (5, 7, 12, '2026-09-22 03:45:00+05:30', '2026-09-22 05:25:00+05:30', 6, 0),
@@ -196,16 +212,16 @@ INSERT INTO goods_forecast (section_id, track_id, window_start, window_end, expe
 -- ---------------------------------------------------------------
 
 INSERT INTO maintenance_jobs (job_id, source_system, department_id, asset_id, section_id, track_id, start_km, end_km, defect_type, maintenance_type, severity, criticality, urgency, asset_risk, predicted_risk, overdue_days, condition_score, operational_impact, safety_factor, estimated_duration_minutes, safety_buffer_minutes, required_block_type, required_manpower, power_block_required, signalling_disconnection_required, earliest_start, latest_start, status) VALUES
-    (1,  'TMS',  1, 3,  4, 6, 0.00, 3.00, 'RAIL_CRACK',           'REPAIR',           5, 0.900, 0.850, 0.800, 0.880, 14, 0.300, 0.850, 0.900, 90,  15, 'TOTAL',       3, TRUE,  FALSE, '2026-09-21 22:00:00+05:30', '2026-09-24 22:00:00+05:30', 'OPEN'),
-    (2,  'TDMS', 3, 6,  4, 6, 0.00, 3.00, 'OHE_ABNORMALITY',      'REPAIR',           5, 0.920, 0.800, 0.850, 0.900, 5,  0.350, 0.850, 0.950, 60,  15, 'TOTAL',       2, TRUE,  FALSE, '2026-09-21 22:00:00+05:30', '2026-09-24 22:00:00+05:30', 'OPEN'),
-    (3,  'SMMS', 2, 4,  4, 6, NULL, NULL, 'SIGNAL_INSPECTION',    'INSPECTION',       3, 0.600, 0.550, 0.500, NULL,  2,  0.600, 0.550, 0.700, 30,  15, 'PARTIAL',     1, FALSE, TRUE,  '2026-09-21 22:00:00+05:30', '2026-09-24 22:00:00+05:30', 'OPEN'),
+    (1,  'TMS',  1, 3,  4, 6, 0.00, 3.00, 'RAIL_CRACK',           'REPAIR',           5, 0.900, 0.850, 0.800, 0.880, 14, 0.300, 0.850, 0.900, 90,  15, 'TOTAL',       3, TRUE,  FALSE, '2026-09-21 22:00:00+05:30', '2026-09-24 22:00:00+05:30', 'SCHEDULED'),
+    (2,  'TDMS', 3, 6,  4, 6, 0.00, 3.00, 'OHE_ABNORMALITY',      'REPAIR',           5, 0.920, 0.800, 0.850, 0.900, 5,  0.350, 0.850, 0.950, 60,  15, 'TOTAL',       2, TRUE,  FALSE, '2026-09-21 22:00:00+05:30', '2026-09-24 22:00:00+05:30', 'SCHEDULED'),
+    (3,  'SMMS', 2, 4,  4, 6, NULL, NULL, 'SIGNAL_INSPECTION',    'INSPECTION',       3, 0.600, 0.550, 0.500, NULL,  2,  0.600, 0.550, 0.700, 30,  15, 'PARTIAL',     1, FALSE, TRUE,  '2026-09-21 22:00:00+05:30', '2026-09-24 22:00:00+05:30', 'SCHEDULED'),
     (4,  'TMS',  1, 1,  3, 4, 0.00, 5.00, 'TRACK_GEOMETRY',       'REPAIR',           3, 0.550, 0.400, 0.450, 0.500, 0,  0.550, 0.400, 0.500, 45,  15, 'PARTIAL',     2, FALSE, FALSE, '2026-09-22 22:00:00+05:30', '2026-09-26 22:00:00+05:30', 'OPEN'),
     (5,  'TMS',  1, 2,  3, 5, 0.00, 5.00, 'BALLAST_DEGRADATION',  'REPAIR',           2, 0.350, 0.300, 0.300, NULL,  0,  0.400, 0.300, 0.400, 40,  15, 'PARTIAL',     2, FALSE, FALSE, '2026-09-23 22:00:00+05:30', '2026-09-27 22:00:00+05:30', 'OPEN'),
-    (6,  'TMS',  1, 14, 7, 12,15.00,20.00,'RAIL_FRACTURE',        'EMERGENCY_REPAIR', 5, 0.980, 0.980, 0.950, 0.950, 0,  0.150, 0.900, 0.980, 120, 20, 'TOTAL',       4, TRUE,  FALSE, '2026-09-21 20:00:00+05:30', '2026-09-21 23:00:00+05:30', 'OPEN'),
+    (6,  'TMS',  1, 14, 7, 12,15.00,20.00,'RAIL_FRACTURE',        'EMERGENCY_REPAIR', 5, 0.980, 0.980, 0.950, 0.950, 0,  0.150, 0.900, 0.980, 120, 20, 'TOTAL',       4, TRUE,  FALSE, '2026-09-21 20:00:00+05:30', '2026-09-21 23:00:00+05:30', 'COMPLETED'),
     (7,  'TDMS', 3, 7,  5, 8, 10.00,15.00,'INSULATOR_WEAR',       'INSPECTION',       3, 0.500, 0.450, 0.450, 0.480, 3,  0.550, 0.450, 0.550, 50,  15, 'PARTIAL',     2, TRUE,  FALSE, '2026-09-22 22:00:00+05:30', '2026-09-25 22:00:00+05:30', 'OPEN'),
     (8,  'SMMS', 2, 11, 5, 8, NULL, NULL, 'RELAY_TEST',           'INSPECTION',       2, 0.300, 0.250, 0.250, NULL,  0,  0.650, 0.250, 0.350, 30,  10, 'PARTIAL',     1, FALSE, TRUE,  '2026-09-24 22:00:00+05:30', '2026-09-28 22:00:00+05:30', 'OPEN'),
     (9,  'TMS',  1, 13, 6, 10,5.00, 10.00,'TRACK_INSPECTION',     'INSPECTION',       2, 0.350, 0.300, 0.300, 0.320, 1,  0.600, 0.300, 0.350, 40,  15, 'PARTIAL',     2, FALSE, FALSE, '2026-09-22 20:00:00+05:30', '2026-09-27 22:00:00+05:30', 'OPEN'),
-    (10, 'TDMS', 3, 12, 6, 10,5.00, 10.00,'OHE_TENSION_LOW',      'REPAIR',           4, 0.700, 0.600, 0.650, 0.680, 7,  0.450, 0.600, 0.700, 55,  15, 'TOTAL',       2, TRUE,  FALSE, '2026-09-22 20:00:00+05:30', '2026-09-25 22:00:00+05:30', 'OPEN'),
+    (10, 'TDMS', 3, 12, 6, 10,5.00, 10.00,'OHE_TENSION_LOW',      'REPAIR',           4, 0.700, 0.600, 0.650, 0.680, 7,  0.450, 0.600, 0.700, 55,  15, 'TOTAL',       2, TRUE,  FALSE, '2026-09-22 20:00:00+05:30', '2026-09-25 22:00:00+05:30', 'SCHEDULED'),
     (11, 'TDMS', 3, 16, 2, 3, 5.00, 10.00,'OHE_SAG',              'REPAIR',           3, 0.450, 0.400, 0.400, NULL,  4,  0.500, 0.350, 0.450, 45,  15, 'TOTAL',       2, TRUE,  FALSE, '2026-09-23 22:00:00+05:30', '2026-09-27 22:00:00+05:30', 'OPEN'),
     (12, 'TMS',  1, 17, 2, 3, 5.00, 10.00,'RAIL_WEAR',            'INSPECTION',       2, 0.300, 0.250, 0.250, 0.280, 0,  0.650, 0.250, 0.300, 30,  10, 'PARTIAL',     1, FALSE, FALSE, '2026-09-24 22:00:00+05:30', '2026-09-29 22:00:00+05:30', 'OPEN'),
     (13, 'TMS',  1, 19, 1, 1, 30.00,35.00,'JOINT_WEAR',           'REPAIR',           3, 0.500, 0.420, 0.420, 0.450, 6,  0.500, 0.550, 0.500, 60,  15, 'PARTIAL',     2, FALSE, FALSE, '2026-09-22 22:00:00+05:30', '2026-09-26 22:00:00+05:30', 'OPEN'),
@@ -302,8 +318,9 @@ INSERT INTO block_requests_fulfilled (block_id, request_id) VALUES
     (3, 10);
 
 INSERT INTO block_trains (block_id, train_id, impact_type, delay_minutes, original_route, new_route) VALUES
-    (1, 1, 'WAIT',    10, NULL, NULL),
+    (1, 1, 'WAIT',    45, NULL, NULL),
     (1, 5, 'REROUTE', 18, '{"section_id": 4, "track_id": 6}'::jsonb, '{"section_id": 4, "track_id": 7}'::jsonb),
+    (1, 4, 'REROUTE', 12, '{"track_id": 6, "section_id": 4}'::jsonb, '{"track_id": 7, "section_id": 4}'::jsonb),
     (2, 3, 'WAIT',    5,  NULL, NULL);
 
 -- ---------------------------------------------------------------

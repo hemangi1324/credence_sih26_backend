@@ -51,6 +51,22 @@
 --     are not the same constraint to CP-SAT.
 -- 12. `compatibility_edges` now enforces job_a_id < job_b_id so a
 --     symmetric pair is never stored twice in opposite order.
+-- 13. Status / impact columns (`maintenance_jobs.status`,
+--     `blocks.status`, `block_requests.request_status`,
+--     `block_trains.impact_type`, `track_availability.status`) have
+--     named CHECK constraints. A typo ('Open' vs 'OPEN') or an invented
+--     state is rejected at insert time instead of silently desyncing
+--     the planner (`WHERE status = 'OPEN'` would otherwise re-plan work
+--     that is already SCHEDULED or COMPLETED).
+-- 14. The blocks EXCLUDE constraint still stops two live blocks from
+--     overlapping on one track. A BEFORE INSERT/UPDATE trigger on both
+--     `train_movements` and `blocks` additionally forbids a scheduled
+--     train from occupying a track that an active block is holding
+--     (CANCELLED/REJECTED blocks are ignored). EXCLUDE cannot express
+--     a cross-table invariant, so this is the hard integrity backstop:
+--     the optimiser must reroute the train or move the block *before*
+--     persisting. `v_job_block_status_mismatch` makes job/block status
+--     desync queryable for CI / health checks.
 --
 -- GRAPH LAYER — where the "graph db" actually lives:
 -- There is deliberately NO separate graph database here. Every edge the
@@ -306,7 +322,7 @@ CREATE TABLE maintenance_jobs (
     signalling_disconnection_required   BOOLEAN NOT NULL DEFAULT FALSE,
     earliest_start                      TIMESTAMPTZ,
     latest_start                        TIMESTAMPTZ,
-    status                              VARCHAR(20) NOT NULL DEFAULT 'OPEN',  -- OPEN, SCHEDULED, DONE, DEFERRED
+    status                              VARCHAR(20) NOT NULL DEFAULT 'OPEN',
     -- Written back by the priority service (TDD Sec. 13). The inputs
     -- above stay the single source of truth, so a score is always
     -- re-derivable/auditable rather than trusted blindly.
@@ -316,7 +332,10 @@ CREATE TABLE maintenance_jobs (
     priority_computed_at                TIMESTAMPTZ,
     created_at                          TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at                          TIMESTAMPTZ NOT NULL DEFAULT now(),
-    CHECK (latest_start IS NULL OR earliest_start IS NULL OR latest_start >= earliest_start)
+    CHECK (latest_start IS NULL OR earliest_start IS NULL OR latest_start >= earliest_start),
+    CONSTRAINT chk_jobs_status CHECK (status IN (
+        'OPEN','SCHEDULED','IN_PROGRESS','COMPLETED','DEFERRED','CANCELLED'
+    ))
 );
 CREATE TRIGGER trg_jobs_updated_at BEFORE UPDATE ON maintenance_jobs
     FOR EACH ROW EXECUTE FUNCTION set_updated_at();
@@ -337,10 +356,13 @@ CREATE TABLE block_requests (
     preferred_end                   TIMESTAMPTZ,
     safety_buffer_minutes            INTEGER NOT NULL DEFAULT 15,
     request_priority                 SMALLINT,                   -- department's own pre-optimizer ranking
-    request_status                   VARCHAR(20) NOT NULL DEFAULT 'PENDING',  -- PENDING, GRANTED, REJECTED, WITHDRAWN
+    request_status                   VARCHAR(20) NOT NULL DEFAULT 'PENDING',
     created_at                       TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at                       TIMESTAMPTZ NOT NULL DEFAULT now(),
-    CHECK (requested_end > requested_start)
+    CHECK (requested_end > requested_start),
+    CONSTRAINT chk_block_requests_status CHECK (request_status IN (
+        'PENDING','GRANTED','REJECTED','WITHDRAWN'
+    ))
 );
 CREATE TRIGGER trg_requests_updated_at BEFORE UPDATE ON block_requests
     FOR EACH ROW EXECUTE FUNCTION set_updated_at();
@@ -409,10 +431,13 @@ CREATE TABLE track_availability (
     track_id        INTEGER NOT NULL REFERENCES tracks(track_id),
     window_start    TIMESTAMPTZ NOT NULL,
     window_end      TIMESTAMPTZ NOT NULL,
-    status          VARCHAR(20) NOT NULL DEFAULT 'AVAILABLE',  -- AVAILABLE, BLOCKED, RESTRICTED
+    status          VARCHAR(20) NOT NULL DEFAULT 'AVAILABLE',
     capacity        SMALLINT DEFAULT 1,
     reason          VARCHAR(100),
-    CHECK (window_end > window_start)
+    CHECK (window_end > window_start),
+    CONSTRAINT chk_track_avail_status CHECK (status IN (
+        'AVAILABLE','BLOCKED','RESTRICTED'
+    ))
 );
 
 -- ---------------------------------------------------------------
@@ -452,8 +477,7 @@ CREATE TABLE blocks (
     planned_start              TIMESTAMPTZ NOT NULL,
     planned_end                TIMESTAMPTZ NOT NULL,
     block_type                 VARCHAR(20) NOT NULL DEFAULT 'MAINTENANCE',
-    status                     VARCHAR(20) NOT NULL DEFAULT 'PROPOSED',  -- PROPOSED, APPROVED, EXECUTING,
-                                                                           -- DONE, CANCELLED, REJECTED
+    status                     VARCHAR(20) NOT NULL DEFAULT 'PROPOSED',
     priority_score              NUMERIC(6,3),
     utilization                 NUMERIC(4,3) CHECK (utilization BETWEEN 0 AND 1),
     conflict_cost                NUMERIC(12,3),                  -- priority-weighted train-disruption cost
@@ -467,6 +491,9 @@ CREATE TABLE blocks (
     created_at                    TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at                    TIMESTAMPTZ NOT NULL DEFAULT now(),
     CHECK (planned_end > planned_start),
+    CONSTRAINT chk_blocks_status CHECK (status IN (
+        'PROPOSED','APPROVED','REJECTED','EXECUTING','DONE','CANCELLED'
+    )),
     -- Real, enforced double-booking guard: no track may be occupied by
     -- two live blocks at once. This is the exclusion constraint your own
     -- db-design notes call for — it was left as a comment before, so
@@ -498,12 +525,110 @@ CREATE TABLE block_trains (
     id              SERIAL PRIMARY KEY,
     block_id        INTEGER NOT NULL REFERENCES blocks(block_id),
     train_id        INTEGER NOT NULL REFERENCES trains(train_id),
-    impact_type     VARCHAR(20) NOT NULL,   -- WAIT, REROUTE, NONE
+    impact_type     VARCHAR(20) NOT NULL,
     delay_minutes   INTEGER NOT NULL DEFAULT 0,
     original_route  JSONB,
     new_route       JSONB,
-    UNIQUE (block_id, train_id)
+    UNIQUE (block_id, train_id),
+    CONSTRAINT chk_block_trains_impact CHECK (impact_type IN (
+        'NONE','WAIT','REROUTE','CANCELLED'
+    ))
 );
+
+-- Cross-table guard: a train may not occupy a track that an active
+-- block is holding (and vice versa). Enforced from BOTH sides so the
+-- invariant holds no matter which row is written first. CANCELLED /
+-- REJECTED blocks are ignored — they are not holding the track.
+-- This is a hard integrity guard for the *planned* timetable. The
+-- optimiser must resolve a conflict BEFORE writing (move the block, or
+-- reroute the train onto another track and update
+-- train_movements.track_id). The trigger is the backstop that
+-- guarantees an unresolved conflict can never be silently persisted.
+CREATE OR REPLACE FUNCTION assert_no_train_block_conflict()
+RETURNS TRIGGER AS $$
+DECLARE
+    conflict_rec RECORD;
+BEGIN
+    IF TG_TABLE_NAME = 'train_movements' THEN
+        IF NEW.track_id IS NULL THEN
+            RETURN NEW;
+        END IF;
+        SELECT b.block_id, b.planned_start, b.planned_end, b.status
+          INTO conflict_rec
+          FROM blocks b
+         WHERE b.track_id = NEW.track_id
+           AND b.status NOT IN ('CANCELLED','REJECTED')
+           AND tstzrange(b.planned_start, b.planned_end)
+               && tstzrange(NEW.scheduled_entry, NEW.scheduled_exit)
+         LIMIT 1;
+
+        IF FOUND THEN
+            RAISE EXCEPTION
+                'Train movement (train_id=%, track_id=%, % to %) conflicts with block_id=% (% to %, status=%). Reroute the train or move the block before persisting.',
+                NEW.train_id, NEW.track_id, NEW.scheduled_entry, NEW.scheduled_exit,
+                conflict_rec.block_id, conflict_rec.planned_start, conflict_rec.planned_end, conflict_rec.status
+                USING ERRCODE = 'exclusion_violation';
+        END IF;
+
+    ELSIF TG_TABLE_NAME = 'blocks' THEN
+        IF NEW.track_id IS NULL OR NEW.status IN ('CANCELLED','REJECTED') THEN
+            RETURN NEW;
+        END IF;
+        SELECT tm.movement_id, tm.train_id, tm.scheduled_entry, tm.scheduled_exit
+          INTO conflict_rec
+          FROM train_movements tm
+         WHERE tm.track_id = NEW.track_id
+           AND tstzrange(tm.scheduled_entry, tm.scheduled_exit)
+               && tstzrange(NEW.planned_start, NEW.planned_end)
+         LIMIT 1;
+
+        IF FOUND THEN
+            RAISE EXCEPTION
+                'Block (track_id=%, % to %) conflicts with scheduled train movement_id=% (train_id=%, % to %). Reroute the train or move the block before persisting.',
+                NEW.track_id, NEW.planned_start, NEW.planned_end,
+                conflict_rec.movement_id, conflict_rec.train_id,
+                conflict_rec.scheduled_entry, conflict_rec.scheduled_exit
+                USING ERRCODE = 'exclusion_violation';
+        END IF;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_train_movement_block_conflict
+    BEFORE INSERT OR UPDATE ON train_movements
+    FOR EACH ROW EXECUTE FUNCTION assert_no_train_block_conflict();
+
+CREATE TRIGGER trg_block_train_movement_conflict
+    BEFORE INSERT OR UPDATE ON blocks
+    FOR EACH ROW EXECUTE FUNCTION assert_no_train_block_conflict();
+
+-- Job status vs the status of the block holding it. The planner selects
+-- work with `WHERE status = 'OPEN'`; a DONE/APPROVED block whose job is
+-- still OPEN would be re-planned. This view makes the mismatch trivially
+-- queryable in CI or a health check.
+CREATE OR REPLACE VIEW v_job_block_status_mismatch AS
+SELECT mj.job_id,
+       mj.status        AS job_status,
+       b.block_id,
+       b.status         AS block_status,
+       CASE
+           WHEN b.status = 'DONE'      AND mj.status <> 'COMPLETED'   THEN 'job should be COMPLETED'
+           WHEN b.status = 'EXECUTING' AND mj.status <> 'IN_PROGRESS' THEN 'job should be IN_PROGRESS'
+           WHEN b.status = 'APPROVED'  AND mj.status <> 'SCHEDULED'   THEN 'job should be SCHEDULED'
+           WHEN b.status = 'PROPOSED'  AND mj.status NOT IN ('OPEN','SCHEDULED') THEN 'job should be OPEN or SCHEDULED'
+       END AS expected
+FROM maintenance_jobs mj
+JOIN block_jobs bj ON bj.job_id  = mj.job_id
+JOIN blocks     b  ON b.block_id = bj.block_id
+WHERE CASE
+          WHEN b.status = 'DONE'      AND mj.status <> 'COMPLETED'   THEN TRUE
+          WHEN b.status = 'EXECUTING' AND mj.status <> 'IN_PROGRESS' THEN TRUE
+          WHEN b.status = 'APPROVED'  AND mj.status <> 'SCHEDULED'   THEN TRUE
+          WHEN b.status = 'PROPOSED'  AND mj.status NOT IN ('OPEN','SCHEDULED') THEN TRUE
+          ELSE FALSE
+      END;
 
 -- ---------------------------------------------------------------
 -- 5. Real-time / monitoring / audit
