@@ -1,0 +1,590 @@
+{
+  "status": "success",
+  "summary": {
+    "jobs": 38,
+    "high_priority_jobs": 0,
+    "candidate_blocks": 38,
+    "scheduled": 24,
+    "deferred": 14,
+    "selected_blocks": 24,
+    "affected_trains": 6,
+    "total_train_delay": 976,
+    "priority_weighted_impact": 3281
+  },
+  "schedule": [
+    {
+      "id": "CB-844E52",
+      "track": "TR-KSRA-IGP-UP",
+      "chainageStart": 8.2,
+      "chainageEnd": 9.5,
+      "startTime": "01:00:00",
+      "endTime": "06:10:00",
+      "duration": 310,
+      "departments": [
+        "TRD"
+      ],
+      "jobIds": [
+        "J-TDMS-00034"
+      ],
+      "priority": 0.5932,
+      "status": "AI-OPTIMIZED",
+      "trainImpact": 100
+    },
+    {
+      "id": "CB-7C4EAB",
+      "track": "TR-KSRA-IGP-DOWN",
+      "chainageStart": 9.83,
+      "chainageEnd": 11.31,
+      "startTime": "01:00:00",
+      "endTime": "03:40:00",
+      "duration": 160,
+      "departments": [
+        "Engineering"
+      ],
+      "jobIds": [
+        "J-TMS-00036"
+      ],
+      "priority": 0.5883,
+      "status": "AI-OPTIMIZED",
+      "trainImpact": 10
+    },
+    {
+      "id": "CB-DD5691",
+      "track": "TR-ABY-VSD-UP",
+      "chainageStart": 3.4,
+      "chainageEnd": 4.07,
+      "startTime": "00:00:00",
+      "endTime": "01:40:00",
+      "duration": 100,
+      "departments": [
+        "Signal"
+      ],
+      "jobIds": [
+        "J-SMMS-00016"
+      ],
+      "priority": 0.5882,
+      "status": "AI-OPTIMIZED",
+      "trainImpact": 140
+    },
+    {
+      "id": "CB-1C1D21",
+      "track": "TR-ABY-VSD-UP",
+      "chainageStart": 10.12,
+      "chainageEnd": 10.52,
+      "startTime": "01:40:00",
+      "endTime": "04:20:00",
+      "duration": 160,
+      "departments": [
+        "TRD"
+      ],
+      "jobIds": [
+        "J-TDMS-00018"
+      ],
+      "priority": 0.4716,
+      "status": "AI-OPTIMIZED",
+      "trainImpact": 100
+    },
+    {
+      "id": "CB-721337",
+      "track": "TR-ABY-VSD-UP",
+      "chainageStart": 0.53,
+      "chainageEnd": 1.1,
+      "startTime": "22:00:00",
+      "endTime": "23:40:00",
+      "duration": 100,
+      "departments": [
+        "TRD"
+      ],
+      "jobIds": [
+        "J-TDMS-00019"
+      ],
+      "priority": 0.2677,
+      "status": "AI-OPTIMIZED",
+      "trainImpact": 0
+    },
+    {
+      "id": "CB-252856",
+      "track": "TR-CSTM-DR-DOWN",
+      "chainageStart": 1.63,
+      "chainageEnd": 2.82,
+      "startTime": "00:00:00",
+      "endTime": "03:10:00",
+      "duration": 190,
+      "departments": [
+        "TRD"
+      ],
+      "jobIds": [
+        "J-TDMS-00001"
+      ],
+      "priority": 0.577,
+      "status": "AI-OPTIMIZED",
+      "trainImpact": 40
+    },
+    {
+      "id": "CB-0BB0E9",
+      "track": "TR-DR-TNA-UP",
+      "chainageStart": 6.54,
+      "chainageEnd": 7.87,
+      "startTime": "22:00:00",
+      "endTime": "02:10:00",
+      "duration": 250,
+      "departments": [
+        "Engineering"
+      ],
+      "jobIds": [
+        "J-TMS-00005"
+      ],
+      "priority": 0.4177,
+      "status": "AI-OPTIMIZED",
+      "trainImpact": 0
+    },
+    {
+      "id": "CB-D8D01C",
+      "track": "TR-DR-TNA-UP",
+      "chainageStart": 14.33,
+      "chainageEnd": 15.47,
+      "startTime": "01:00:00",
+      "endTime": "02:40:00",
+      "duration": 100,
+      "departments": [
+        "Engineering"
+      ],
+      "jobIds": [
+        "J-TMS-00003"
+      ],
+      "priority": 0.3468,
+      "status": "AI-OPTIMIZED",
+      "trainImpact": 40
+    },
+    {
+      "id": "CB-1DB7FA",
+      "track": "TR-DR-TNA-DOWN",
+      "chainageStart": 15.7,
+      "chainageEnd": 16.95,
+      "startTime": "01:00:00",
+      "endTime": "06:10:00",
+      "duration": 310,
+      "departments": [
+        "Engineering"
+      ],
+      "jobIds": [
+        "J-TMS-00008"
+      ],
+      "priority": 0.445,
+      "status": "AI-OPTIMIZED",
+      "trainImpact": 0
+    },
+    {
+      "id": "CB-001087",
+      "track": "TR-ATG-THS-UP",
+      "chainageStart": 5.78,
+      "chainageEnd": 6.32,
+      "startTime": "23:00:00",
+      "endTime": "04:10:00",
+      "duration": 310,
+      "departments": [
+        "Engineering"
+      ],
+      "jobIds": [
+        "J-TMS-00027"
+      ],
+      "priority": 0.5659,
+      "status": "AI-OPTIMIZED",
+      "trainImpact": 0
+    },
+    {
+      "id": "CB-8ED566",
+      "track": "TR-TNA-KYN-DOWN",
+      "chainageStart": 7.52,
+      "chainageEnd": 8.65,
+      "startTime": "00:00:00",
+      "endTime": "04:10:00",
+      "duration": 250,
+      "departments": [
+        "Engineering"
+      ],
+      "jobIds": [
+        "J-TMS-00012"
+      ],
+      "priority": 0.5605,
+      "status": "AI-OPTIMIZED",
+      "trainImpact": 0
+    },
+    {
+      "id": "CB-7C9484",
+      "track": "TR-ASO-ATG-DOWN",
+      "chainageStart": 1.05,
+      "chainageEnd": 1.78,
+      "startTime": "01:00:00",
+      "endTime": "05:10:00",
+      "duration": 250,
+      "departments": [
+        "Engineering"
+      ],
+      "jobIds": [
+        "J-TMS-00026"
+      ],
+      "priority": 0.5533,
+      "status": "AI-OPTIMIZED",
+      "trainImpact": 10
+    },
+    {
+      "id": "CB-A11822",
+      "track": "TR-ATG-THS-DOWN",
+      "chainageStart": 2.36,
+      "chainageEnd": 2.68,
+      "startTime": "22:00:00",
+      "endTime": "00:40:00",
+      "duration": 160,
+      "departments": [
+        "Engineering"
+      ],
+      "jobIds": [
+        "J-TMS-00029"
+      ],
+      "priority": 0.5492,
+      "status": "AI-OPTIMIZED",
+      "trainImpact": 0
+    },
+    {
+      "id": "CB-AA73A4",
+      "track": "TR-KYN-ABY-UP",
+      "chainageStart": 4.18,
+      "chainageEnd": 5.23,
+      "startTime": "23:00:00",
+      "endTime": "00:40:00",
+      "duration": 100,
+      "departments": [
+        "Engineering"
+      ],
+      "jobIds": [
+        "J-TMS-00014"
+      ],
+      "priority": 0.5263,
+      "status": "AI-OPTIMIZED",
+      "trainImpact": 0
+    },
+    {
+      "id": "CB-9A539F",
+      "track": "TR-KYN-ABY-DOWN",
+      "chainageStart": 2.89,
+      "chainageEnd": 3.97,
+      "startTime": "23:00:00",
+      "endTime": "03:10:00",
+      "duration": 250,
+      "departments": [
+        "Signal"
+      ],
+      "jobIds": [
+        "J-SMMS-00015"
+      ],
+      "priority": 0.5078,
+      "status": "AI-OPTIMIZED",
+      "trainImpact": 0
+    },
+    {
+      "id": "CB-245411",
+      "track": "TR-ASO-ATG-UP",
+      "chainageStart": 4.62,
+      "chainageEnd": 4.92,
+      "startTime": "01:00:00",
+      "endTime": "05:10:00",
+      "duration": 250,
+      "departments": [
+        "Signal"
+      ],
+      "jobIds": [
+        "J-SMMS-00025"
+      ],
+      "priority": 0.4922,
+      "status": "AI-OPTIMIZED",
+      "trainImpact": 100
+    },
+    {
+      "id": "CB-B6B056",
+      "track": "TR-TNA-KYN-UP",
+      "chainageStart": 4.87,
+      "chainageEnd": 5.27,
+      "startTime": "23:00:00",
+      "endTime": "00:40:00",
+      "duration": 100,
+      "departments": [
+        "TRD"
+      ],
+      "jobIds": [
+        "J-TDMS-00011"
+      ],
+      "priority": 0.4899,
+      "status": "AI-OPTIMIZED",
+      "trainImpact": 0
+    },
+    {
+      "id": "CB-C3FFC6",
+      "track": "TR-KE-KSRA-DOWN",
+      "chainageStart": 5.44,
+      "chainageEnd": 5.91,
+      "startTime": "23:00:00",
+      "endTime": "04:10:00",
+      "duration": 310,
+      "departments": [
+        "Signal"
+      ],
+      "jobIds": [
+        "J-SMMS-00032"
+      ],
+      "priority": 0.4412,
+      "status": "AI-OPTIMIZED",
+      "trainImpact": 0
+    },
+    {
+      "id": "CB-39B2BF",
+      "track": "TR-ABY-VSD-DOWN",
+      "chainageStart": 7.13,
+      "chainageEnd": 7.83,
+      "startTime": "22:00:00",
+      "endTime": "03:10:00",
+      "duration": 310,
+      "departments": [
+        "Engineering"
+      ],
+      "jobIds": [
+        "J-TMS-00022"
+      ],
+      "priority": 0.4057,
+      "status": "AI-OPTIMIZED",
+      "trainImpact": 0
+    },
+    {
+      "id": "CB-A6DA25",
+      "track": "TR-ABY-VSD-DOWN",
+      "chainageStart": 20.44,
+      "chainageEnd": 21.26,
+      "startTime": "01:00:00",
+      "endTime": "05:10:00",
+      "duration": 250,
+      "departments": [
+        "Signal"
+      ],
+      "jobIds": [
+        "J-SMMS-00021"
+      ],
+      "priority": 0.2977,
+      "status": "AI-OPTIMIZED",
+      "trainImpact": 10
+    },
+    {
+      "id": "CB-693FE0",
+      "track": "TR-KE-KSRA-UP",
+      "chainageStart": 3.47,
+      "chainageEnd": 4.62,
+      "startTime": "01:00:00",
+      "endTime": "03:10:00",
+      "duration": 130,
+      "departments": [
+        "Signal"
+      ],
+      "jobIds": [
+        "J-SMMS-00031"
+      ],
+      "priority": 0.4029,
+      "status": "AI-OPTIMIZED",
+      "trainImpact": 140
+    },
+    {
+      "id": "CB-06063A",
+      "track": "TR-THS-KE-UP",
+      "chainageStart": 2.49,
+      "chainageEnd": 2.93,
+      "startTime": "23:00:00",
+      "endTime": "02:10:00",
+      "duration": 190,
+      "departments": [
+        "Engineering"
+      ],
+      "jobIds": [
+        "J-TMS-00030"
+      ],
+      "priority": 0.3553,
+      "status": "AI-OPTIMIZED",
+      "trainImpact": 0
+    },
+    {
+      "id": "CB-1846B9",
+      "track": "TR-VSD-ASO-UP",
+      "chainageStart": 2.1,
+      "chainageEnd": 2.99,
+      "startTime": "01:00:00",
+      "endTime": "05:10:00",
+      "duration": 250,
+      "departments": [
+        "Engineering"
+      ],
+      "jobIds": [
+        "J-TMS-00023"
+      ],
+      "priority": 0.3263,
+      "status": "AI-OPTIMIZED",
+      "trainImpact": 100
+    },
+    {
+      "id": "CB-596CCF",
+      "track": "TR-VSD-ASO-DOWN",
+      "chainageStart": 2.32,
+      "chainageEnd": 3,
+      "startTime": "22:00:00",
+      "endTime": "03:10:00",
+      "duration": 310,
+      "departments": [
+        "Signal"
+      ],
+      "jobIds": [
+        "J-SMMS-00024"
+      ],
+      "priority": 0.2764,
+      "status": "AI-OPTIMIZED",
+      "trainImpact": 0
+    }
+  ],
+  "train_impact": [
+    {
+      "train_id": "T-12109",
+      "baseline_arrival": "01:42:00",
+      "new_arrival": "04:53:00",
+      "delay": 191,
+      "rerouted": false,
+      "feasible": false,
+      "impact": 2200,
+      "reason": "Train route is infeasible or exceeds max allowed delay."
+    },
+    {
+      "train_id": "T-12110",
+      "baseline_arrival": "00:27:00",
+      "new_arrival": "04:47:00",
+      "delay": 260,
+      "rerouted": false,
+      "feasible": false,
+      "impact": 2200,
+      "reason": "Train route is infeasible or exceeds max allowed delay."
+    },
+    {
+      "train_id": "T-11057",
+      "baseline_arrival": "04:47:00",
+      "new_arrival": "06:23:00",
+      "delay": 96,
+      "rerouted": false,
+      "feasible": false,
+      "impact": 2800,
+      "reason": "Train route is infeasible or exceeds max allowed delay."
+    },
+    {
+      "train_id": "T-DUR-01",
+      "baseline_arrival": "02:07:00",
+      "new_arrival": "04:53:00",
+      "delay": 166,
+      "rerouted": false,
+      "feasible": false,
+      "impact": 2000,
+      "reason": "Train route is infeasible or exceeds max allowed delay."
+    },
+    {
+      "train_id": "T-FRT-01",
+      "baseline_arrival": "03:27:00",
+      "new_arrival": "06:23:00",
+      "delay": 176,
+      "rerouted": false,
+      "feasible": false,
+      "impact": 1900,
+      "reason": "Train route is infeasible or exceeds max allowed delay."
+    },
+    {
+      "train_id": "T-FRT-02",
+      "baseline_arrival": "04:27:00",
+      "new_arrival": "05:54:00",
+      "delay": 87,
+      "rerouted": false,
+      "feasible": true,
+      "impact": 957,
+      "reason": "Delayed by 87 min due to waiting."
+    }
+  ],
+  "deferred_jobs": [
+    {
+      "job_id": "J-TDMS-00002",
+      "priority_score": 0.5706,
+      "reason": "Deferred because available windows conflict with scheduled train traffic or higher-priority maintenance."
+    },
+    {
+      "job_id": "J-TMS-00004",
+      "priority_score": 0.3232,
+      "reason": "Deferred because available windows conflict with scheduled train traffic or higher-priority maintenance."
+    },
+    {
+      "job_id": "J-TMS-00006",
+      "priority_score": 0.5659,
+      "reason": "Deferred because available windows conflict with scheduled train traffic or higher-priority maintenance."
+    },
+    {
+      "job_id": "J-SMMS-00007",
+      "priority_score": 0.4978,
+      "reason": "Deferred because available windows conflict with scheduled train traffic or higher-priority maintenance."
+    },
+    {
+      "job_id": "J-TMS-00009",
+      "priority_score": 0.409,
+      "reason": "Deferred because available windows conflict with scheduled train traffic or higher-priority maintenance."
+    },
+    {
+      "job_id": "J-TMS-00010",
+      "priority_score": 0.3716,
+      "reason": "Deferred because available windows conflict with scheduled train traffic or higher-priority maintenance."
+    },
+    {
+      "job_id": "J-TDMS-00013",
+      "priority_score": 0.3691,
+      "reason": "Deferred because available windows conflict with scheduled train traffic or higher-priority maintenance."
+    },
+    {
+      "job_id": "J-SMMS-00017",
+      "priority_score": 0.4248,
+      "reason": "Deferred because available windows conflict with scheduled train traffic or higher-priority maintenance."
+    },
+    {
+      "job_id": "J-TMS-00020",
+      "priority_score": 0.1293,
+      "reason": "Deferred because available windows conflict with scheduled train traffic or higher-priority maintenance."
+    },
+    {
+      "job_id": "J-TMS-00028",
+      "priority_score": 0.5422,
+      "reason": "Deferred because available windows conflict with scheduled train traffic or higher-priority maintenance."
+    },
+    {
+      "job_id": "J-SMMS-00033",
+      "priority_score": 0.3442,
+      "reason": "Deferred because available windows conflict with scheduled train traffic or higher-priority maintenance."
+    },
+    {
+      "job_id": "J-SMMS-00035",
+      "priority_score": 0.152,
+      "reason": "Deferred because available windows conflict with scheduled train traffic or higher-priority maintenance."
+    },
+    {
+      "job_id": "J-TMS-00037",
+      "priority_score": 0.352,
+      "reason": "Deferred because available windows conflict with scheduled train traffic or higher-priority maintenance."
+    },
+    {
+      "job_id": "J-SMMS-00038",
+      "priority_score": 0.3367,
+      "reason": "Deferred because available windows conflict with scheduled train traffic or higher-priority maintenance."
+    }
+  ],
+  "analytics": {
+    "jobsByDepartment": {},
+    "scheduledVsDeferred": {
+      "scheduled": 24,
+      "deferred": 14
+    }
+  },
+  "source": "live_pipeline"
+}
