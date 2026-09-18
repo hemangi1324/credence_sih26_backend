@@ -269,7 +269,20 @@ app.get('/api/analytics', (req, res) => {
     res.json({
         jobsByDepartment: {},
         scheduledVsDeferred: { scheduled: 0, deferred: 0 },
-        trainDelayDistribution: []
+        trainDelayDistribution: [],
+        overdueTrend: [
+            { date: 'Aug 01', value: 24 },
+            { date: 'Aug 07', value: 21 },
+            { date: 'Aug 14', value: 18 },
+            { date: 'Aug 21', value: 11 },
+            { date: 'Aug 28', value: 6 }
+        ],
+        disruptions: [
+            { type: 'Track failures', events: 14, avgRecoveryMin: 45 },
+            { type: 'Block overruns', events: 8, avgRecoveryMin: 30 },
+            { type: 'Train delays', events: 22, avgRecoveryMin: 15 },
+            { type: 'Signal faults', events: 11, avgRecoveryMin: 20 }
+        ]
     });
 });
 
