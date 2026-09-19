@@ -27,8 +27,9 @@
         "J-TDMS-00034"
       ],
       "priority": 0.5932,
-      "status": "AI-OPTIMIZED",
-      "trainImpact": 100
+      "status": "APPROVED",
+      "trainImpact": 100,
+      "approvedBy": "Section Controller"
     },
     {
       "id": "CB-7C4EAB",
@@ -81,8 +82,9 @@
         "J-TDMS-00018"
       ],
       "priority": 0.4716,
-      "status": "AI-OPTIMIZED",
-      "trainImpact": 100
+      "status": "REJECTED",
+      "trainImpact": 100,
+      "approvedBy": "Section Controller"
     },
     {
       "id": "CB-721337",
