@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
 
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const dbUrl = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/sih26';
 
@@ -16,7 +16,7 @@ async function seed() {
         await client.connect();
         console.log('Connected to PostgreSQL database.');
 
-        const backendDataDir = path.join(__dirname, '..', 'credence_sih26_backend', 'data');
+        const backendDataDir = path.join(__dirname, '..', 'data');
         const schemaPath = path.join(backendDataDir, 'schema.sql');
         const seedSqlPath = path.join(backendDataDir, 'seed.sql');
 
