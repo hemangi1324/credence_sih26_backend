@@ -119,6 +119,19 @@ async function bootstrapDB() {
 bootstrapDB();
 
 // ─────────────────────────────────────────────────────────────────────────────
+// USERS API
+// ─────────────────────────────────────────────────────────────────────────────
+app.get('/api/users', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT user_id, name, role, department_id FROM users');
+        res.json(result.rows);
+    } catch (e) {
+        console.error('Error fetching users:', e.message);
+        res.status(500).json({ error: 'Failed to fetch users' });
+    }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // HELPER: get latest block status from DB (overrides pipeline cache status)
 // ─────────────────────────────────────────────────────────────────────────────
 async function getBlockStatusOverrides() {
@@ -173,6 +186,17 @@ app.get('/api/health', async (req, res) => {
         console.error('DB Health Check Failed:', e.message);
     }
     res.json({ status: 'ok', database: dbStatus, algorithms: 'available' });
+});
+
+// USERS
+app.get('/api/users', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT user_id, name, role, department_id FROM users ORDER BY name');
+        res.json(result.rows);
+    } catch (e) {
+        console.error('Error fetching users:', e.message);
+        res.status(500).json({ error: e.message });
+    }
 });
 
 // ── DASHBOARD ─────────────────────────────────────────────────────────────────
@@ -369,16 +393,32 @@ app.get('/api/blocks/:id', async (req, res) => {
 
 // ── APPROVE / REJECT / MODIFY BLOCK ──────────────────────────────────────────
 app.patch('/api/blocks/:id/status', async (req, res) => {
-    const { status, approvedBy, notes, modifiedStartTime, modifiedEndTime } = req.body;
+    const { status, approvedBy, notes, modifiedStartTime, modifiedEndTime, actor_id } = req.body;
     const validStatuses = ['APPROVED', 'REJECTED', 'MODIFIED', 'PROPOSED', 'AI-OPTIMIZED'];
     if (!status || !validStatuses.includes(status)) {
         return res.status(400).json({ error: 'Invalid status. Must be one of: ' + validStatuses.join(', ') });
     }
+    const client = await pool.connect();
     try {
-        await pool.query(`
+        await client.query('BEGIN');
+        
+        await client.query(`
             INSERT INTO block_status_log (block_id, status, approved_by, notes, modified_start_time, modified_end_time)
             VALUES ($1, $2, $3, $4, $5, $6)
         `, [req.params.id, status, approvedBy || 'Section Controller', notes || null, modifiedStartTime || null, modifiedEndTime || null]);
+        
+        if (actor_id) {
+            const userRes = await client.query('SELECT role FROM users WHERE user_id = $1', [actor_id]);
+            const role = userRes.rows[0]?.role || 'UNKNOWN';
+            let action = status === 'APPROVED' ? 'APPROVE' : (status === 'REJECTED' ? 'REJECT' : 'MODIFY');
+            
+            await client.query(`
+                INSERT INTO audit_logs (entity_type, entity_id, action, actor_id, role, reason)
+                VALUES ($1, $2, $3, $4, $5, $6)
+            `, ['BLOCK', 0, action, actor_id, role, notes || `Status changed to ${status}`]);
+        }
+
+        await client.query('COMMIT');
 
         // Also update in cache so next read reflects change immediately
         if (cachedPlanningResult?.schedule) {
@@ -390,8 +430,11 @@ app.patch('/api/blocks/:id/status', async (req, res) => {
 
         res.json({ success: true, blockId: req.params.id, status, approvedBy: approvedBy || 'Section Controller' });
     } catch (e) {
+        await client.query('ROLLBACK');
         console.error('Error updating block status:', e.message);
         res.status(500).json({ error: e.message });
+    } finally {
+        client.release();
     }
 });
 
@@ -471,7 +514,7 @@ app.post('/api/requests', async (req, res) => {
         department, maintenanceType, track, asset, preferredDate,
         requestedDuration, preferredWindowStart, preferredWindowEnd,
         requiredManpower, machinery, priority, safetyBuffer,
-        dependsOnJob, requiresIsolation, notes, submittedBy
+        dependsOnJob, requiresIsolation, notes, actor_id
     } = req.body;
 
     if (!department || !maintenanceType || !track || !asset) {
@@ -479,8 +522,10 @@ app.post('/api/requests', async (req, res) => {
     }
 
     const id = `REQ-${Date.now().toString(36).toUpperCase()}`;
+    const client = await pool.connect();
     try {
-        await pool.query(`
+        await client.query('BEGIN');
+        await client.query(`
             INSERT INTO block_requests (
                 id, department, maintenance_type, track, asset, preferred_date,
                 requested_duration, preferred_window_start, preferred_window_end,
@@ -491,15 +536,30 @@ app.post('/api/requests', async (req, res) => {
             requestedDuration || 60, preferredWindowStart || '22:00', preferredWindowEnd || '04:00',
             requiredManpower || 5, machinery || 'N/A', priority || 'Medium',
             safetyBuffer !== false, dependsOnJob || false, requiresIsolation || false,
-            notes || '', submittedBy || 'Field Engineer']);
+            notes || '', actor_id || null]);
+            
+        if (actor_id) {
+            const userRes = await client.query('SELECT role FROM users WHERE user_id = $1', [actor_id]);
+            const role = userRes.rows[0]?.role || 'UNKNOWN';
+            
+            await client.query(`
+                INSERT INTO audit_logs (entity_type, entity_id, action, actor_id, role, reason)
+                VALUES ($1, $2, $3, $4, $5, $6)
+            `, ['REQUEST', 0, 'CREATE', actor_id, role, 'Block request submitted']);
+        }
+            
+        await client.query('COMMIT');
 
         res.json({
             id, department, maintenanceType, track, asset, status: 'DEMANDED',
-            submittedAt: new Date().toISOString(), submittedBy: submittedBy || 'Field Engineer'
+            submittedAt: new Date().toISOString(), submittedBy: actor_id
         });
     } catch (e) {
+        await client.query('ROLLBACK');
         console.error('Error saving block request:', e.message);
         res.status(500).json({ error: e.message });
+    } finally {
+        client.release();
     }
 });
 
@@ -691,25 +751,42 @@ app.get('/api/field/active-block', async (req, res) => {
 });
 
 app.patch('/api/field/:blockId/progress', async (req, res) => {
-    const { progress, status, crew, notes } = req.body;
+    const { progress, status, crew, notes, actor_id } = req.body;
     const { blockId } = req.params;
+    const client = await pool.connect();
     try {
+        await client.query('BEGIN');
         // Upsert execution record
-        await pool.query(`
+        await client.query(`
             INSERT INTO block_execution (block_id, progress, status, crew, notes, updated_at)
             VALUES ($1, $2, $3, $4, $5, NOW())
             ON CONFLICT DO NOTHING
         `, [blockId, progress || 0, status || 'IN_PROGRESS', crew || 0, notes || '']);
 
-        await pool.query(`
+        await client.query(`
             UPDATE block_execution SET progress=$2, status=$3, updated_at=NOW()
             WHERE block_id=$1
         `, [blockId, progress || 0, status || 'IN_PROGRESS']);
+        
+        if (actor_id) {
+            const userRes = await client.query('SELECT role FROM users WHERE user_id = $1', [actor_id]);
+            const role = userRes.rows[0]?.role || 'UNKNOWN';
+            
+            await client.query(`
+                INSERT INTO audit_logs (entity_type, entity_id, action, actor_id, role, reason)
+                VALUES ($1, $2, $3, $4, $5, $6)
+            `, ['BLOCK', 0, 'MODIFY', actor_id, role, `Field progress updated to ${progress}%`]);
+        }
+
+        await client.query('COMMIT');
 
         res.json({ success: true, blockId, progress, status });
     } catch (e) {
+        await client.query('ROLLBACK');
         console.error('Error updating field progress:', e.message);
         res.status(500).json({ error: e.message });
+    } finally {
+        client.release();
     }
 });
 

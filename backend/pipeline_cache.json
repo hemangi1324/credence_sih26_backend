@@ -27,7 +27,7 @@
         "J-TDMS-00034"
       ],
       "priority": 0.5932,
-      "status": "APPROVED",
+      "status": "MODIFIED",
       "trainImpact": 100,
       "approvedBy": "Section Controller"
     },
@@ -389,8 +389,9 @@
         "J-SMMS-00031"
       ],
       "priority": 0.4029,
-      "status": "AI-OPTIMIZED",
-      "trainImpact": 140
+      "status": "APPROVED",
+      "trainImpact": 140,
+      "approvedBy": "Section Controller"
     },
     {
       "id": "CB-06063A",
