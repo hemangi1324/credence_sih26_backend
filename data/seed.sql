@@ -76,6 +76,19 @@ INSERT INTO sections (section_id, code, from_station_id, to_station_id, division
     (6, 'PUNE-DD',   6, 7, 'Pune',   75.00, 90),
     (7, 'DD-SUR',    7, 8, 'Solapur',105.00, 120);
 
+INSERT INTO users (user_id, name, role, department_id) VALUES
+    ('u1', 'S. Deshmukh', 'SECTION_CONTROLLER', NULL),
+    ('u2', 'R. Kulkarni', 'SECTION_CONTROLLER', NULL),
+    ('u3', 'A. Bhosale', 'BDMS_INCHARGE', 1),
+    ('u4', 'P. Sharma', 'BDMS_INCHARGE', 3),
+    ('u5', 'M. Joshi', 'BDMS_INCHARGE', 2),
+    ('u6', 'V. Kumar', 'FIELD_MANAGER', NULL);
+
+INSERT INTO user_sections (user_id, section_id) VALUES
+    ('u1', 1), ('u1', 2), ('u1', 3), ('u1', 4),
+    ('u2', 5), ('u2', 6), ('u2', 7),
+    ('u6', 1), ('u6', 2), ('u6', 3), ('u6', 4);
+
 INSERT INTO tracks (track_id, section_id, line, track_type, start_km, end_km, max_speed_kmph, capacity, electrified, signalling_type) VALUES
     (1,  1, 'UP',     'MAIN',   0.00, 54.00, 110, 1, TRUE,  'AUTOMATIC'),
     (2,  1, 'DOWN',   'MAIN',   0.00, 54.00, 110, 1, TRUE,  'AUTOMATIC'),
@@ -230,19 +243,19 @@ INSERT INTO maintenance_jobs (job_id, source_system, department_id, asset_id, se
 
 -- BDMS layer: department requests for track access. Not every job has
 -- one yet (jobs 12, 14, 15 are still open demand with no formal request).
-INSERT INTO block_requests (request_id, job_id, department_id, track_id, requested_date, requested_start, requested_end, minimum_duration_minutes, preferred_start, preferred_end, safety_buffer_minutes, request_priority, request_status) VALUES
-    (1,  1,  1, 6,  '2026-09-21', '2026-09-21 22:00:00+05:30', '2026-09-22 00:30:00+05:30', 90, '2026-09-21 22:30:00+05:30', '2026-09-22 00:15:00+05:30', 15, 1, 'GRANTED'),
-    (2,  2,  3, 6,  '2026-09-21', '2026-09-21 22:00:00+05:30', '2026-09-22 00:00:00+05:30', 60, '2026-09-21 22:30:00+05:30', '2026-09-21 23:45:00+05:30', 15, 1, 'GRANTED'),
-    (3,  3,  2, 6,  '2026-09-21', '2026-09-21 23:30:00+05:30', '2026-09-22 00:30:00+05:30', 30, '2026-09-21 23:40:00+05:30', '2026-09-22 00:15:00+05:30', 15, 2, 'GRANTED'),
-    (4,  4,  1, 4,  '2026-09-22', '2026-09-22 22:00:00+05:30', '2026-09-22 23:00:00+05:30', 45, '2026-09-22 22:15:00+05:30', '2026-09-22 23:00:00+05:30', 15, 3, 'PENDING'),
-    (5,  5,  1, 5,  '2026-09-23', '2026-09-23 22:00:00+05:30', '2026-09-23 23:00:00+05:30', 40, '2026-09-23 22:30:00+05:30', '2026-09-23 23:10:00+05:30', 15, 4, 'PENDING'),
-    (6,  6,  1, 12, '2026-09-21', '2026-09-21 20:00:00+05:30', '2026-09-21 22:30:00+05:30', 120,'2026-09-21 20:00:00+05:30', '2026-09-21 22:00:00+05:30', 20, 1, 'GRANTED'),
-    (7,  7,  3, 8,  '2026-09-22', '2026-09-22 23:00:00+05:30', '2026-09-23 00:00:00+05:30', 50, '2026-09-22 23:00:00+05:30', '2026-09-22 23:50:00+05:30', 15, 3, 'PENDING'),
-    (8,  8,  2, 8,  '2026-09-24', '2026-09-24 22:00:00+05:30', '2026-09-24 23:00:00+05:30', 30, '2026-09-24 22:15:00+05:30', '2026-09-24 22:45:00+05:30', 10, 4, 'WITHDRAWN'),
-    (9,  9,  1, 10, '2026-09-22', '2026-09-22 22:00:00+05:30', '2026-09-22 23:00:00+05:30', 40, '2026-09-22 22:00:00+05:30', '2026-09-22 22:40:00+05:30', 15, 3, 'PENDING'),
-    (10, 10, 3, 10, '2026-09-22', '2026-09-22 22:00:00+05:30', '2026-09-22 23:10:00+05:30', 55, '2026-09-22 22:00:00+05:30', '2026-09-22 22:55:00+05:30', 15, 2, 'GRANTED'),
-    (11, 11, 3, 3,  '2026-09-23', '2026-09-23 22:00:00+05:30', '2026-09-23 23:00:00+05:30', 45, '2026-09-23 22:00:00+05:30', '2026-09-23 22:45:00+05:30', 15, 3, 'REJECTED'),
-    (12, 13, 1, 1,  '2026-09-22', '2026-09-22 22:00:00+05:30', '2026-09-22 23:15:00+05:30', 60, '2026-09-22 22:00:00+05:30', '2026-09-22 23:00:00+05:30', 15, 3, 'PENDING');
+INSERT INTO block_requests (request_id, job_id, department_id, track_id, requested_date, requested_start, requested_end, minimum_duration_minutes, preferred_start, preferred_end, safety_buffer_minutes, request_priority, request_status, submitted_by) VALUES
+    (1,  1,  1, 6,  '2026-09-21', '2026-09-21 22:00:00+05:30', '2026-09-22 00:30:00+05:30', 90, '2026-09-21 22:30:00+05:30', '2026-09-22 00:15:00+05:30', 15, 1, 'GRANTED', 'u3'),
+    (2,  2,  3, 6,  '2026-09-21', '2026-09-21 22:00:00+05:30', '2026-09-22 00:00:00+05:30', 60, '2026-09-21 22:30:00+05:30', '2026-09-21 23:45:00+05:30', 15, 1, 'GRANTED', 'u4'),
+    (3,  3,  2, 6,  '2026-09-21', '2026-09-21 23:30:00+05:30', '2026-09-22 00:30:00+05:30', 30, '2026-09-21 23:40:00+05:30', '2026-09-22 00:15:00+05:30', 15, 2, 'GRANTED', 'u5'),
+    (4,  4,  1, 4,  '2026-09-22', '2026-09-22 22:00:00+05:30', '2026-09-22 23:00:00+05:30', 45, '2026-09-22 22:15:00+05:30', '2026-09-22 23:00:00+05:30', 15, 3, 'PENDING', 'u3'),
+    (5,  5,  1, 5,  '2026-09-23', '2026-09-23 22:00:00+05:30', '2026-09-23 23:00:00+05:30', 40, '2026-09-23 22:30:00+05:30', '2026-09-23 23:10:00+05:30', 15, 4, 'PENDING', 'u3'),
+    (6,  6,  1, 12, '2026-09-21', '2026-09-21 20:00:00+05:30', '2026-09-21 22:30:00+05:30', 120,'2026-09-21 20:00:00+05:30', '2026-09-21 22:00:00+05:30', 20, 1, 'GRANTED', 'u3'),
+    (7,  7,  3, 8,  '2026-09-22', '2026-09-22 23:00:00+05:30', '2026-09-23 00:00:00+05:30', 50, '2026-09-22 23:00:00+05:30', '2026-09-22 23:50:00+05:30', 15, 3, 'PENDING', 'u4'),
+    (8,  8,  2, 8,  '2026-09-24', '2026-09-24 22:00:00+05:30', '2026-09-24 23:00:00+05:30', 30, '2026-09-24 22:15:00+05:30', '2026-09-24 22:45:00+05:30', 10, 4, 'WITHDRAWN', 'u5'),
+    (9,  9,  1, 10, '2026-09-22', '2026-09-22 22:00:00+05:30', '2026-09-22 23:00:00+05:30', 40, '2026-09-22 22:00:00+05:30', '2026-09-22 22:40:00+05:30', 15, 3, 'PENDING', 'u3'),
+    (10, 10, 3, 10, '2026-09-22', '2026-09-22 22:00:00+05:30', '2026-09-22 23:10:00+05:30', 55, '2026-09-22 22:00:00+05:30', '2026-09-22 22:55:00+05:30', 15, 2, 'GRANTED', 'u4'),
+    (11, 11, 3, 3,  '2026-09-23', '2026-09-23 22:00:00+05:30', '2026-09-23 23:00:00+05:30', 45, '2026-09-23 22:00:00+05:30', '2026-09-23 22:45:00+05:30', 15, 3, 'REJECTED', 'u4'),
+    (12, 13, 1, 1,  '2026-09-22', '2026-09-22 22:00:00+05:30', '2026-09-22 23:15:00+05:30', 60, '2026-09-22 22:00:00+05:30', '2026-09-22 23:00:00+05:30', 15, 3, 'PENDING', 'u3');
 
 INSERT INTO job_resources (job_id, resource_id, quantity) VALUES
     (1, 1, 1), (1, 7, 1),
@@ -356,17 +369,17 @@ INSERT INTO asset_live_status (ts, asset_id, status, condition_score, failure_de
     ('2026-09-21 22:35:00+05:30', 3,  'UNDER_MAINTENANCE',0.300, FALSE, NULL),
     ('2026-09-21 22:35:00+05:30', 6,  'UNDER_MAINTENANCE',0.350, FALSE, NULL);
 
-INSERT INTO execution_records (block_id, actual_start, actual_end, completed_jobs, notes) VALUES
-    (2, '2026-09-21 20:05:00+05:30', '2026-09-21 22:20:00+05:30', '[6]'::jsonb, 'Emergency rail-fracture repair at RAIL-DD-SUR-01 completed within extended window; speed restriction applied afterward pending follow-up inspection.');
+INSERT INTO execution_records (block_id, actual_start, actual_end, completed_jobs, notes, recorded_by) VALUES
+    (2, '2026-09-21 20:05:00+05:30', '2026-09-21 22:20:00+05:30', '[6]'::jsonb, 'Emergency rail-fracture repair at RAIL-DD-SUR-01 completed within extended window; speed restriction applied afterward pending follow-up inspection.', 'u6');
 
 INSERT INTO rerouting_decisions (train_id, event_id, blocked_track_id, original_route_id, alternate_route_id, reroute_time, additional_distance_km, additional_travel_time_minutes, additional_delay_minutes, reason, accepted, decided_by, decided_at) VALUES
     (5, 4, 6, 1, 2, '2026-09-22 00:50:00+05:30', 0.00, 0, 18, 'Track 6 (KJT-LNL UP) occupied by integrated maintenance block BUNDLE-1-2-3 until 01:30; rerouted onto the DOWN line to avoid a 60+ minute wait.', TRUE, 'Control Office - Karjat Section Controller', '2026-09-22 00:52:00+05:30');
 
-INSERT INTO audit_logs (entity_type, entity_id, action, actor, role, reason) VALUES
-    ('BLOCK',   1,  'APPROVE', 'S. Deshmukh', 'CONTROL_OFFICE', 'Bundled ENG+TRD+SNT possession approved; train impact acceptable (max 18 min).'),
-    ('BLOCK',   2,  'APPROVE', 'R. Kulkarni', 'CONTROL_OFFICE', 'Emergency possession auto-escalated and approved.'),
-    ('REQUEST', 11, 'REJECT',  'A. Bhosale',  'PLANNER',        'Branch-line single track window conflicts with scheduled Panvel local/goods traffic; resubmit for a later window.'),
-    ('REROUTE', 1,  'OVERRIDE','S. Deshmukh', 'CONTROL_OFFICE', 'Accepted AI-proposed reroute for Konark Express onto the DOWN line rather than a 60+ minute wait.');
+INSERT INTO audit_logs (entity_type, entity_id, action, actor_id, role, reason) VALUES
+    ('BLOCK',   1,  'APPROVE', 'u1', 'SECTION_CONTROLLER', 'Bundled ENG+TRD+SNT possession approved; train impact acceptable (max 18 min).'),
+    ('BLOCK',   2,  'APPROVE', 'u2', 'SECTION_CONTROLLER', 'Emergency possession auto-escalated and approved.'),
+    ('REQUEST', 11, 'REJECT',  'u3', 'BDMS_INCHARGE', 'Branch-line single track window conflicts with scheduled Panvel local/goods traffic; resubmit for a later window.'),
+    ('REROUTE', 1,  'OVERRIDE','u1', 'SECTION_CONTROLLER', 'Accepted AI-proposed reroute for Konark Express onto the DOWN line rather than a 60+ minute wait.');
 
 -- ---------------------------------------------------------------
 -- Reset every sequence to continue past the explicit IDs above, so the

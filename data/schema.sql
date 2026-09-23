@@ -150,6 +150,19 @@ CREATE TABLE sections (
     CHECK (from_station_id <> to_station_id)
 );
 
+CREATE TABLE users (
+    user_id         VARCHAR(50) PRIMARY KEY,
+    name            VARCHAR(100) NOT NULL,
+    role            VARCHAR(50) NOT NULL CHECK (role IN ('SECTION_CONTROLLER', 'BDMS_INCHARGE', 'FIELD_MANAGER')),
+    department_id   INTEGER REFERENCES departments(department_id)
+);
+
+CREATE TABLE user_sections (
+    user_id         VARCHAR(50) NOT NULL REFERENCES users(user_id),
+    section_id      INTEGER NOT NULL REFERENCES sections(section_id),
+    PRIMARY KEY (user_id, section_id)
+);
+
 CREATE TABLE tracks (
     track_id        SERIAL PRIMARY KEY,
     section_id      INTEGER NOT NULL REFERENCES sections(section_id),
@@ -357,6 +370,7 @@ CREATE TABLE block_requests (
     safety_buffer_minutes            INTEGER NOT NULL DEFAULT 15,
     request_priority                 SMALLINT,                   -- department's own pre-optimizer ranking
     request_status                   VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    submitted_by                     VARCHAR(50) REFERENCES users(user_id),
     created_at                       TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at                       TIMESTAMPTZ NOT NULL DEFAULT now(),
     CHECK (requested_end > requested_start),
@@ -698,7 +712,8 @@ CREATE TABLE execution_records (
     actual_start    TIMESTAMPTZ,
     actual_end      TIMESTAMPTZ,
     completed_jobs  JSONB,
-    notes           TEXT
+    notes           TEXT,
+    recorded_by     VARCHAR(50) REFERENCES users(user_id)
 );
 
 CREATE TABLE rerouting_decisions (
@@ -723,7 +738,7 @@ CREATE TABLE audit_logs (
     entity_type     VARCHAR(30) NOT NULL,   -- BLOCK, JOB, REQUEST, REROUTE
     entity_id       INTEGER NOT NULL,
     action          VARCHAR(30) NOT NULL,   -- APPROVE, MODIFY, REJECT, OVERRIDE
-    actor           VARCHAR(100) NOT NULL,
+    actor_id        VARCHAR(50) NOT NULL REFERENCES users(user_id),
     role            VARCHAR(30),            -- PLANNER, CONTROL_OFFICE, MANAGEMENT, FIELD
     reason          TEXT,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
