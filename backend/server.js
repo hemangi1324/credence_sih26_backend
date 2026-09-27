@@ -448,42 +448,521 @@ app.get('/api/schedule', async (req, res) => {
 });
 
 // ── TRAINS ────────────────────────────────────────────────────────────────────
-app.get('/api/trains', async (req, res) => {
-    if (cachedPlanningResult && cachedPlanningResult.train_impact) {
-        return res.json(cachedPlanningResult.train_impact.map(t => ({
-            id: t.train_id,
-            number: t.train_id,
-            name: t.train_type ? `${t.train_type} ${t.train_id}` : `Train ${t.train_id}`,
-            type: t.train_type || 'Express',
-            delay: t.delay || 0,
-            currentStatus: t.feasible === false ? 'DELAYED' : (t.delay > 60 ? 'DELAYED' : 'ON_TIME'),
-            reroutingStatus: t.rerouted ? 'ACCEPTED' : 'NONE',
-            baselineArrival: t.baseline_arrival || '',
-            newArrival: t.new_arrival || '',
-            currentSection: t.route ? t.route[0] : 'Unknown',
-            affectedBlockId: t.affected_block || null,
-            reroutingEligible: (t.delay || 0) > 30,
-            scheduledArrival: t.baseline_arrival || '',
-            scheduledDeparture: t.baseline_arrival || '',
-            originalRoute: t.route ? t.route.slice(0,-1).map((s, i) => ({
-                from: s, to: t.route[i+1], track: 'N/A', duration: 0
-            })) : [],
-            currentRoute: t.route ? t.route.slice(0,-1).map((s, i) => ({
-                from: s, to: t.route[i+1], track: 'N/A', duration: 0
-            })) : [],
-            scheduledOccupation: [],
-        })));
+// Canonical train dataset for the Pune corridor demo (SIH26027)
+// These are real IR train numbers/names operating on the Central Railway corridor.
+// Service-day accuracy: All trains listed operate on Wed 24 Sep 2026.
+// [DEMO] Disruption/reroute events are SIMULATED for demonstration purposes.
+const CANONICAL_TRAINS = [
+    {
+        trainNumber: '26101',
+        trainName: 'Pune - Ajni Vande Bharat Express',
+        trainType: 'Vande Bharat Express',
+        sourceStation: 'Pune Junction',
+        sourceStationCode: 'PUNE',
+        destinationStation: 'Ajni',
+        destinationStationCode: 'AJNI',
+        scheduledDate: '2026-09-24',
+        scheduledDeparture: '06:25',
+        scheduledArrival: '16:00',
+        status: 'NORMAL',
+        rerouteStatus: 'NOT_REQUIRED',
+        delayMinutes: 0,
+        affectedSection: null,
+        disruptionReason: null,
+        disruptionDescription: null,
+        originalRoute: [
+            { station: 'Pune Junction', code: 'PUNE', lat: 18.5284, lng: 73.8738 },
+            { station: 'Daund Junction', code: 'DD', lat: 18.4645, lng: 74.5814 },
+            { station: 'Solapur', code: 'SUR', lat: 17.6599, lng: 75.9064 },
+            { station: 'Wadi Junction', code: 'WADI', lat: 17.0651, lng: 76.9832 },
+            { station: 'Raichur', code: 'RC', lat: 16.2120, lng: 77.3566 },
+            { station: 'Secunderabad Junction', code: 'SC', lat: 17.4344, lng: 78.5013 },
+            { station: 'Balharshah', code: 'BPQ', lat: 19.8565, lng: 79.5757 },
+            { station: 'Nagpur Junction', code: 'NGP', lat: 21.1458, lng: 79.0882 },
+            { station: 'Ajni', code: 'AJNI', lat: 21.1268, lng: 79.1128 }
+        ],
+        proposedRoute: null,
+        approvedRoute: null,
+        approvedBy: null,
+        approvedAt: null,
+        aiRecommendation: null,
+        alternatives: [],
+        operationalImpact: { additionalDistance: 0, additionalTime: 0, affectedStations: [], platformImpact: 'None' }
+    },
+    {
+        trainNumber: '20670',
+        trainName: 'Hubballi - Pune Vande Bharat Express',
+        trainType: 'Vande Bharat Express',
+        sourceStation: 'Hubballi Junction',
+        sourceStationCode: 'UBL',
+        destinationStation: 'Pune Junction',
+        destinationStationCode: 'PUNE',
+        scheduledDate: '2026-09-24',
+        scheduledDeparture: '05:45',
+        scheduledArrival: '14:30',
+        status: 'DELAYED',
+        rerouteStatus: 'NOT_REQUIRED',
+        delayMinutes: 35,
+        affectedSection: 'MIRAJ → PUNE',
+        disruptionReason: 'Track maintenance block active on Miraj–Satara section',
+        disruptionDescription: '[DEMO/SIMULATED] Scheduled maintenance possession on UP line between Miraj and Satara. Train is holding at Miraj signal. Expected clearance 07:45.',
+        originalRoute: [
+            { station: 'Hubballi Junction', code: 'UBL', lat: 15.3647, lng: 75.1240 },
+            { station: 'Dharwad', code: 'DWR', lat: 15.4569, lng: 75.0078 },
+            { station: 'Londa Junction', code: 'LD', lat: 15.3795, lng: 74.5161 },
+            { station: 'Miraj Junction', code: 'MRJ', lat: 16.8258, lng: 74.6428 },
+            { station: 'Sangli', code: 'SL', lat: 16.8557, lng: 74.5644 },
+            { station: 'Satara', code: 'STR', lat: 17.6805, lng: 74.0183 },
+            { station: 'Pune Junction', code: 'PUNE', lat: 18.5284, lng: 73.8738 }
+        ],
+        proposedRoute: null,
+        approvedRoute: null,
+        approvedBy: null,
+        approvedAt: null,
+        aiRecommendation: null,
+        alternatives: [],
+        operationalImpact: { additionalDistance: 0, additionalTime: 35, affectedStations: [], platformImpact: 'Platform 5 reassigned' }
+    },
+    {
+        trainNumber: '20674',
+        trainName: 'Pune - Kolhapur Vande Bharat Express',
+        trainType: 'Vande Bharat Express',
+        sourceStation: 'Pune Junction',
+        sourceStationCode: 'PUNE',
+        destinationStation: 'Kolhapur',
+        destinationStationCode: 'KOP',
+        scheduledDate: '2026-09-24',
+        scheduledDeparture: '07:00',
+        scheduledArrival: '12:30',
+        status: 'REROUTE_SUGGESTED',
+        rerouteStatus: 'PENDING_APPROVAL',
+        delayMinutes: 0,
+        affectedSection: 'PUNE → SATARA',
+        disruptionReason: 'Track geometry defect detected on Pune–Satara section',
+        disruptionDescription: '[DEMO/SIMULATED] AI system detected track geometry anomaly on the Pune–Lonand section at 05:42. Speed restriction imposed to 30 km/h. Time-Dependent A* computed alternate path via Miraj. Reroute reduces expected delay from +2h 15m to +45m.',
+        originalRoute: [
+            { station: 'Pune Junction', code: 'PUNE', lat: 18.5284, lng: 73.8738 },
+            { station: 'Lonand', code: 'LND', lat: 17.9367, lng: 74.3067 },
+            { station: 'Satara', code: 'STR', lat: 17.6805, lng: 74.0183 },
+            { station: 'Sangli', code: 'SL', lat: 16.8557, lng: 74.5644 },
+            { station: 'Miraj Junction', code: 'MRJ', lat: 16.8258, lng: 74.6428 },
+            { station: 'Kolhapur', code: 'KOP', lat: 16.6883, lng: 74.2228 }
+        ],
+        proposedRoute: [
+            { station: 'Pune Junction', code: 'PUNE', lat: 18.5284, lng: 73.8738 },
+            { station: 'Lonavala', code: 'LNL', lat: 18.7546, lng: 73.4062 },
+            { station: 'Karjat Junction', code: 'KJT', lat: 18.9107, lng: 73.3237 },
+            { station: 'Panvel', code: 'PNVL', lat: 18.9894, lng: 73.1175 },
+            { station: 'Miraj Junction', code: 'MRJ', lat: 16.8258, lng: 74.6428 },
+            { station: 'Kolhapur', code: 'KOP', lat: 16.6883, lng: 74.2228 }
+        ],
+        approvedRoute: null,
+        approvedBy: null,
+        approvedAt: null,
+        aiRecommendation: {
+            recommendedRoute: 'PUNE → LNL → KJT → PNVL → MRJ → KOP',
+            estimatedDelay: 45,
+            additionalDistance: 32,
+            confidence: 0.87,
+            reasoning: [
+                'Original section (PUNE–STR) has active speed restriction (30 km/h) due to geometry defect',
+                'Alternate path via Lonavala–Karjat–Panvel is fully operational',
+                'Alternate section has available capacity — no conflicting trains',
+                'Estimated delay reduced from +2h 15m to +45m',
+                'No destination platform conflict detected at KOP',
+                'Maintenance crew notified via BDMS for original section inspection'
+            ],
+            constraints: ['Speed restriction on PUNE–STR', 'Platform availability at MRJ', 'Crew transfer at PUNE'],
+            generatedAt: '2026-09-24T05:42:00+05:30',
+            engine: 'Time-Dependent A*'
+        },
+        alternatives: [
+            { label: 'Option A — Original Route (Speed Restricted)', route: 'PUNE → LND → STR → SL → MRJ → KOP', estimatedDelay: 135, additionalDistance: 0, risk: 'HIGH', capacity: 'Limited', recommended: false },
+            { label: 'Option B — Via Lonavala (Recommended)', route: 'PUNE → LNL → KJT → PNVL → MRJ → KOP', estimatedDelay: 45, additionalDistance: 32, risk: 'LOW', capacity: 'Available', recommended: true },
+            { label: 'Option C — Cancelled Service', route: 'N/A', estimatedDelay: 9999, additionalDistance: 0, risk: 'N/A', capacity: 'N/A', recommended: false }
+        ],
+        operationalImpact: { additionalDistance: 32, additionalTime: 45, affectedStations: ['LND', 'STR'], platformImpact: 'Platform reassignment at MRJ' },
+        timeline: [
+            { time: '05:30', event: 'Train departed Pune', status: 'done' },
+            { time: '05:42', event: 'Track geometry defect detected on Pune–Lonand', status: 'done' },
+            { time: '05:45', event: 'AI conflict detection triggered', status: 'done' },
+            { time: '05:46', event: 'Alternative route evaluated', status: 'done' },
+            { time: '05:48', event: 'Rerouting recommendation generated', status: 'done' },
+            { time: '05:50', event: 'Controller approval pending', status: 'active' }
+        ],
+        notReroutedReason: {
+            explanation: 'If the original route is retained, the train will wait for the affected section to become available or proceed at a severely restricted speed.',
+            reasons: ['Original route has an active speed restriction', 'Would create a queue of following trains', 'Higher downstream delay impact'],
+            outcomeOriginalRoute: { expectedArrival: '14:45', expectedDelay: 135 },
+            outcomeIfRerouted: { expectedArrival: '13:15', expectedDelay: 45 }
+        }
+    },
+    {
+        trainNumber: '12025',
+        trainName: 'Pune - Secunderabad Shatabdi Express',
+        trainType: 'Shatabdi Express',
+        sourceStation: 'Pune Junction',
+        sourceStationCode: 'PUNE',
+        destinationStation: 'Secunderabad Junction',
+        destinationStationCode: 'SC',
+        scheduledDate: '2026-09-24',
+        scheduledDeparture: '07:00',
+        scheduledArrival: '15:30',
+        status: 'REROUTE_APPROVED',
+        rerouteStatus: 'APPROVED',
+        delayMinutes: 55,
+        affectedSection: 'WADI → RC',
+        disruptionReason: 'OHE (Overhead Equipment) maintenance block on Wadi–Raichur section',
+        disruptionDescription: '[DEMO/SIMULATED] Pre-planned OHE maintenance block TR-05 active on Wadi–Raichur section (23:00–05:30). Reroute approved earlier via Gulbarga bypass. Train currently running on approved alternate route.',
+        originalRoute: [
+            { station: 'Pune Junction', code: 'PUNE', lat: 18.5284, lng: 73.8738 },
+            { station: 'Solapur', code: 'SUR', lat: 17.6599, lng: 75.9064 },
+            { station: 'Wadi Junction', code: 'WADI', lat: 17.0651, lng: 76.9832 },
+            { station: 'Raichur', code: 'RC', lat: 16.2120, lng: 77.3566 },
+            { station: 'Kacheguda', code: 'KCG', lat: 17.3850, lng: 78.4867 },
+            { station: 'Secunderabad Junction', code: 'SC', lat: 17.4344, lng: 78.5013 }
+        ],
+        proposedRoute: [
+            { station: 'Pune Junction', code: 'PUNE', lat: 18.5284, lng: 73.8738 },
+            { station: 'Solapur', code: 'SUR', lat: 17.6599, lng: 75.9064 },
+            { station: 'Gulbarga', code: 'GR', lat: 17.3297, lng: 76.8232 },
+            { station: 'Bidar', code: 'BIDR', lat: 17.9139, lng: 77.5189 },
+            { station: 'Secunderabad Junction', code: 'SC', lat: 17.4344, lng: 78.5013 }
+        ],
+        approvedRoute: [
+            { station: 'Pune Junction', code: 'PUNE', lat: 18.5284, lng: 73.8738 },
+            { station: 'Solapur', code: 'SUR', lat: 17.6599, lng: 75.9064 },
+            { station: 'Gulbarga', code: 'GR', lat: 17.3297, lng: 76.8232 },
+            { station: 'Bidar', code: 'BIDR', lat: 17.9139, lng: 77.5189 },
+            { station: 'Secunderabad Junction', code: 'SC', lat: 17.4344, lng: 78.5013 }
+        ],
+        approvedBy: 'S. Deshmukh',
+        approvedAt: '2026-09-23T22:15:00+05:30',
+        aiRecommendation: {
+            recommendedRoute: 'PUNE → SUR → GR → BIDR → SC',
+            estimatedDelay: 55,
+            additionalDistance: 28,
+            confidence: 0.92,
+            reasoning: [
+                'OHE maintenance block (TR-05) on WADI–RC section confirmed active 23:00–05:30',
+                'Gulbarga bypass (SUR–GR–BIDR) is fully operational',
+                'Alternate section capacity available — no conflicting possessions',
+                'Estimated delay +55m vs +2h 20m on original route',
+                'Approved by Section Controller S. Deshmukh at 22:15'
+            ],
+            constraints: ['OHE block TR-05 on WADI–RC', 'Platform allocation at GR'],
+            generatedAt: '2026-09-23T21:55:00+05:30',
+            engine: 'Time-Dependent A*'
+        },
+        alternatives: [],
+        operationalImpact: { additionalDistance: 28, additionalTime: 55, affectedStations: ['WADI', 'RC'], platformImpact: 'None at SC' }
+    },
+    {
+        trainNumber: '11019',
+        trainName: 'Konark Express',
+        trainType: 'Express',
+        sourceStation: 'Mumbai CSMT',
+        sourceStationCode: 'CSTM',
+        destinationStation: 'Bhubaneswar',
+        destinationStationCode: 'BBS',
+        scheduledDate: '2026-09-24',
+        scheduledDeparture: '08:05',
+        scheduledArrival: '07:10+1',
+        status: 'DISRUPTED_NOT_REROUTED',
+        rerouteStatus: 'NOT_REQUIRED',
+        delayMinutes: 18,
+        affectedSection: 'NGP → WR',
+        disruptionReason: 'Minor signal fault at Wardha Junction',
+        disruptionDescription: '[DEMO/SIMULATED] Signal interlocking fault at Wardha Junction caused a 18-minute hold. Expected to clear before train reaches affected section. Rerouting not recommended — disruption will resolve before train arrival.',
+        originalRoute: [
+            { station: 'Mumbai CSMT', code: 'CSTM', lat: 18.9398, lng: 72.8355 },
+            { station: 'Kalyan Junction', code: 'KYN', lat: 19.2437, lng: 73.1355 },
+            { station: 'Pune Junction', code: 'PUNE', lat: 18.5284, lng: 73.8738 },
+            { station: 'Daund Junction', code: 'DD', lat: 18.4645, lng: 74.5814 },
+            { station: 'Solapur', code: 'SUR', lat: 17.6599, lng: 75.9064 },
+            { station: 'Wadi Junction', code: 'WADI', lat: 17.0651, lng: 76.9832 },
+            { station: 'Nagpur Junction', code: 'NGP', lat: 21.1458, lng: 79.0882 },
+            { station: 'Wardha Junction', code: 'WR', lat: 20.7453, lng: 78.6022 },
+            { station: 'Bhubaneswar', code: 'BBS', lat: 20.2961, lng: 85.8180 }
+        ],
+        proposedRoute: null,
+        approvedRoute: null,
+        approvedBy: null,
+        approvedAt: null,
+        aiRecommendation: null,
+        notReroutedReason: {
+            explanation: 'Rerouting not optimal for this train',
+            reasons: [
+                'Signal fault expected to clear in ~22 minutes — before train reaches WR',
+                'Alternate route via Chandrapur adds +2h 40m delay (vs +18m staying)',
+                'Alternate section partially occupied by goods traffic',
+                'Original disruption is minor and self-resolving',
+                'Downstream impact minimal — no cascading delays expected'
+            ],
+            outcomeOriginalRoute: { expectedArrival: '07:28+1', expectedDelay: 18 },
+            outcomeIfRerouted: { expectedArrival: '09:50+1', expectedDelay: 160 }
+        },
+        alternatives: [],
+        operationalImpact: { additionalDistance: 0, additionalTime: 18, affectedStations: ['WR'], platformImpact: 'None' }
+    },
+    {
+        trainNumber: '22149',
+        trainName: 'Pune - Ernakulam Express',
+        trainType: 'Express',
+        sourceStation: 'Pune Junction',
+        sourceStationCode: 'PUNE',
+        destinationStation: 'Ernakulam Junction',
+        destinationStationCode: 'ERN',
+        scheduledDate: '2026-09-24',
+        scheduledDeparture: '22:00',
+        scheduledArrival: '10:00+1',
+        status: 'NORMAL',
+        rerouteStatus: 'NOT_REQUIRED',
+        delayMinutes: 0,
+        affectedSection: null,
+        disruptionReason: null,
+        disruptionDescription: null,
+        originalRoute: [
+            { station: 'Pune Junction', code: 'PUNE', lat: 18.5284, lng: 73.8738 },
+            { station: 'Miraj Junction', code: 'MRJ', lat: 16.8258, lng: 74.6428 },
+            { station: 'Kolhapur', code: 'KOP', lat: 16.6883, lng: 74.2228 },
+            { station: 'Coimbatore Junction', code: 'CBE', lat: 11.0018, lng: 76.9629 },
+            { station: 'Ernakulam Junction', code: 'ERN', lat: 9.9795, lng: 76.2779 }
+        ],
+        proposedRoute: null,
+        approvedRoute: null,
+        approvedBy: null,
+        approvedAt: null,
+        aiRecommendation: null,
+        alternatives: [],
+        operationalImpact: { additionalDistance: 0, additionalTime: 0, affectedStations: [], platformImpact: 'None' }
+    },
+    {
+        trainNumber: '22225',
+        trainName: 'Solapur - Mumbai CSMT Vande Bharat Express',
+        trainType: 'Vande Bharat Express',
+        sourceStation: 'Solapur',
+        sourceStationCode: 'SUR',
+        destinationStation: 'Mumbai CSMT',
+        destinationStationCode: 'CSTM',
+        scheduledDate: '2026-09-24',
+        scheduledDeparture: '05:55',
+        scheduledArrival: '13:20',
+        status: 'REROUTED',
+        rerouteStatus: 'COMPLETED',
+        delayMinutes: 42,
+        affectedSection: 'PUNE → KARJAT',
+        disruptionReason: 'Consolidated maintenance block on Lonavala–Karjat section',
+        disruptionDescription: '[DEMO/SIMULATED] Active block possession on Lonavala–Karjat UP line. Reroute approved and completed via Pune–Daund–Kalyan. Train is now running on rerouted path.',
+        originalRoute: [
+            { station: 'Solapur', code: 'SUR', lat: 17.6599, lng: 75.9064 },
+            { station: 'Pune Junction', code: 'PUNE', lat: 18.5284, lng: 73.8738 },
+            { station: 'Lonavala', code: 'LNL', lat: 18.7546, lng: 73.4062 },
+            { station: 'Karjat Junction', code: 'KJT', lat: 18.9107, lng: 73.3237 },
+            { station: 'Kalyan Junction', code: 'KYN', lat: 19.2437, lng: 73.1355 },
+            { station: 'Mumbai CSMT', code: 'CSTM', lat: 18.9398, lng: 72.8355 }
+        ],
+        proposedRoute: [
+            { station: 'Solapur', code: 'SUR', lat: 17.6599, lng: 75.9064 },
+            { station: 'Pune Junction', code: 'PUNE', lat: 18.5284, lng: 73.8738 },
+            { station: 'Daund Junction', code: 'DD', lat: 18.4645, lng: 74.5814 },
+            { station: 'Kalyan Junction', code: 'KYN', lat: 19.2437, lng: 73.1355 },
+            { station: 'Mumbai CSMT', code: 'CSTM', lat: 18.9398, lng: 72.8355 }
+        ],
+        approvedRoute: [
+            { station: 'Solapur', code: 'SUR', lat: 17.6599, lng: 75.9064 },
+            { station: 'Pune Junction', code: 'PUNE', lat: 18.5284, lng: 73.8738 },
+            { station: 'Daund Junction', code: 'DD', lat: 18.4645, lng: 74.5814 },
+            { station: 'Kalyan Junction', code: 'KYN', lat: 19.2437, lng: 73.1355 },
+            { station: 'Mumbai CSMT', code: 'CSTM', lat: 18.9398, lng: 72.8355 }
+        ],
+        approvedBy: 'R. Kulkarni',
+        approvedAt: '2026-09-24T04:55:00+05:30',
+        aiRecommendation: {
+            recommendedRoute: 'SUR → PUNE → DD → KYN → CSTM',
+            estimatedDelay: 42,
+            additionalDistance: 18,
+            confidence: 0.94,
+            reasoning: [
+                'Lonavala–Karjat section has active block possession (00:30–05:00)',
+                'Daund bypass via SUR–DD–KYN is fully operational',
+                'Alternate route capacity available',
+                'Estimated delay +42m vs +1h 45m via original blocked section',
+                'Approved by Section Controller R. Kulkarni at 04:55'
+            ],
+            constraints: ['Block possession LNL–KJT', 'Platform availability KYN'],
+            generatedAt: '2026-09-24T04:40:00+05:30',
+            engine: 'Time-Dependent A*'
+        },
+        alternatives: [],
+        operationalImpact: { additionalDistance: 18, additionalTime: 42, affectedStations: ['LNL', 'KJT'], platformImpact: 'None at CSTM' }
     }
-    const fallbackTrains = (fallbackData.trains || []).map(t => ({
-        id: t.train_id, number: t.train_id,
-        name: t.train_type ? `${t.train_type} ${t.train_id}` : `Train ${t.train_id}`,
-        type: t.train_type || 'Express', delay: 0,
-        currentStatus: 'ON_TIME', reroutingStatus: 'NONE',
-        currentSection: 'Unknown', reroutingEligible: false,
-        originalRoute: [], currentRoute: [], scheduledOccupation: [],
-    }));
-    res.json(fallbackTrains);
+];
+
+app.get('/api/trains', async (req, res) => {
+    // Merge canonical train data with any DB reroute log overrides
+    try {
+        const logResult = await pool.query(`
+            SELECT DISTINCT ON (train_number) train_number, decision, approved_by, approved_at, 
+                   original_route, approved_route, estimated_delay_minutes, affected_section
+            FROM train_reroute_log
+            ORDER BY train_number, approved_at DESC
+        `);
+        const logMap = {};
+        for (const row of logResult.rows) {
+            logMap[row.train_number] = row;
+        }
+        
+        const trains = CANONICAL_TRAINS.map(t => {
+            const log = logMap[t.trainNumber];
+            if (log) {
+                // DB approval overrides in-memory state
+                const newStatus = log.decision === 'APPROVED' 
+                    ? (t.proposedRoute ? 'REROUTE_APPROVED' : t.status)
+                    : (log.decision === 'REJECTED' ? 'DISRUPTED_NOT_REROUTED' : t.status);
+                return {
+                    ...t,
+                    status: newStatus,
+                    rerouteStatus: log.decision === 'APPROVED' ? 'APPROVED' : log.decision === 'REJECTED' ? 'REJECTED' : t.rerouteStatus,
+                    approvedBy: log.approved_by || t.approvedBy,
+                    approvedAt: log.approved_at || t.approvedAt,
+                    approvedRoute: log.approved_route || t.approvedRoute,
+                };
+            }
+            return t;
+        });
+        res.json(trains);
+    } catch (e) {
+        console.warn('DB query failed, returning canonical trains:', e.message);
+        res.json(CANONICAL_TRAINS);
+    }
 });
+
+app.get('/api/trains/:number', async (req, res) => {
+    const train = CANONICAL_TRAINS.find(t => t.trainNumber === req.params.number);
+    if (!train) return res.status(404).json({ error: 'Train not found' });
+    
+    try {
+        const logResult = await pool.query(
+            'SELECT * FROM train_reroute_log WHERE train_number=$1 ORDER BY approved_at DESC LIMIT 1',
+            [req.params.number]
+        );
+        if (logResult.rows.length > 0) {
+            const log = logResult.rows[0];
+            const newStatus = log.decision === 'APPROVED'
+                ? (train.proposedRoute ? 'REROUTE_APPROVED' : train.status)
+                : (log.decision === 'REJECTED' ? 'DISRUPTED_NOT_REROUTED' : train.status);
+            return res.json({
+                ...train,
+                status: newStatus,
+                rerouteStatus: log.decision,
+                approvedBy: log.approved_by,
+                approvedAt: log.approved_at,
+                approvedRoute: log.approved_route || train.approvedRoute,
+            });
+        }
+    } catch (e) {
+        console.warn('DB override check failed:', e.message);
+    }
+    res.json(train);
+});
+
+app.post('/api/trains/:number/reroute/approve', async (req, res) => {
+    const { approvedBy, notes, actor_id } = req.body;
+    const train = CANONICAL_TRAINS.find(t => t.trainNumber === req.params.number);
+    if (!train) return res.status(404).json({ error: 'Train not found' });
+    if (!train.proposedRoute) return res.status(400).json({ error: 'No proposed route to approve' });
+    
+    try {
+        await pool.query(`
+            INSERT INTO train_reroute_log 
+            (train_number, train_name, decision, approved_by, original_route, approved_route, 
+             disruption_reason, affected_section, estimated_delay_minutes, notes)
+            VALUES ($1, $2, 'APPROVED', $3, $4, $5, $6, $7, $8, $9)
+        `, [
+            train.trainNumber,
+            train.trainName,
+            approvedBy || 'Section Controller',
+            JSON.stringify(train.originalRoute),
+            JSON.stringify(train.proposedRoute),
+            train.disruptionReason,
+            train.affectedSection,
+            train.aiRecommendation?.estimatedDelay || 0,
+            notes || null
+        ]);
+        
+        // Also log to audit_logs if actor_id provided
+        if (actor_id) {
+            try {
+                const userRes = await pool.query('SELECT role FROM users WHERE user_id = $1', [actor_id]);
+                const role = userRes.rows[0]?.role || 'UNKNOWN';
+                await pool.query(`
+                    INSERT INTO audit_logs (entity_type, entity_id, action, actor_id, role, reason)
+                    VALUES ('TRAIN_REROUTE', 0, 'APPROVE', $1, $2, $3)
+                `, [actor_id, role, `Reroute approved for train ${train.trainNumber} (${train.trainName})`]);
+            } catch(e) { /* audit table may not exist */ }
+        }
+        
+        res.json({ 
+            success: true, 
+            trainNumber: train.trainNumber,
+            decision: 'APPROVED',
+            approvedBy: approvedBy || 'Section Controller',
+            approvedAt: new Date().toISOString(),
+            approvedRoute: train.proposedRoute
+        });
+    } catch (e) {
+        console.error('Error approving reroute:', e.message);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.post('/api/trains/:number/reroute/reject', async (req, res) => {
+    const { rejectedBy, reason, actor_id } = req.body;
+    const train = CANONICAL_TRAINS.find(t => t.trainNumber === req.params.number);
+    if (!train) return res.status(404).json({ error: 'Train not found' });
+    
+    try {
+        await pool.query(`
+            INSERT INTO train_reroute_log 
+            (train_number, train_name, decision, approved_by, original_route, 
+             disruption_reason, affected_section, notes)
+            VALUES ($1, $2, 'REJECTED', $3, $4, $5, $6, $7)
+        `, [
+            train.trainNumber,
+            train.trainName,
+            rejectedBy || 'Section Controller',
+            JSON.stringify(train.originalRoute),
+            train.disruptionReason,
+            train.affectedSection,
+            reason || null
+        ]);
+        
+        res.json({ 
+            success: true, 
+            trainNumber: train.trainNumber,
+            decision: 'REJECTED',
+            rejectedBy: rejectedBy || 'Section Controller'
+        });
+    } catch (e) {
+        console.error('Error rejecting reroute:', e.message);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.get('/api/trains/:number/reroute-history', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT * FROM train_reroute_log WHERE train_number=$1 ORDER BY approved_at DESC',
+            [req.params.number]
+        );
+        res.json(result.rows);
+    } catch (e) {
+        res.json([]);
+    }
+});
+
+
 
 // ── ANALYTICS ─────────────────────────────────────────────────────────────────
 app.get('/api/analytics', async (req, res) => {
