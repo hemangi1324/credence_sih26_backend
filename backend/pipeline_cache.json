@@ -64,8 +64,9 @@
         "J-SMMS-00016"
       ],
       "priority": 0.5882,
-      "status": "AI-OPTIMIZED",
-      "trainImpact": 140
+      "status": "COMPLETED",
+      "trainImpact": 140,
+      "approvedBy": "Section Controller"
     },
     {
       "id": "CB-1C1D21",
@@ -101,8 +102,9 @@
         "J-TDMS-00019"
       ],
       "priority": 0.2677,
-      "status": "AI-OPTIMIZED",
-      "trainImpact": 0
+      "status": "APPROVED",
+      "trainImpact": 0,
+      "approvedBy": "Section Controller"
     },
     {
       "id": "CB-252856",
@@ -138,7 +140,8 @@
       ],
       "priority": 0.4177,
       "status": "AI-OPTIMIZED",
-      "trainImpact": 0
+      "trainImpact": 0,
+      "approvedBy": "Section Controller"
     },
     {
       "id": "CB-D8D01C",
@@ -191,8 +194,9 @@
         "J-TMS-00027"
       ],
       "priority": 0.5659,
-      "status": "AI-OPTIMIZED",
-      "trainImpact": 0
+      "status": "MODIFIED",
+      "trainImpact": 0,
+      "approvedBy": "Section Controller"
     },
     {
       "id": "CB-8ED566",
